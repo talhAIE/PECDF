@@ -49,17 +49,21 @@ export default function PortfolioDonut({ data = [], totalM = 0, className = '' }
         </div>
 
         {/* Legend */}
-        <div className="flex-1 min-w-0 space-y-1">
+        <div className="min-w-0 flex-1 space-y-1.5">
           {data.map((entry) => (
-            <div key={entry.hs_code} className="flex items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1.5 min-w-0">
+            <div
+              key={entry.hs_code}
+              className="flex items-center justify-between gap-2 text-xs"
+              title={`${entry.commodity} — ${entry.share_pct?.toFixed(1)}% of portfolio`}
+            >
+              <div className="flex min-w-0 items-center gap-1.5">
                 <span
-                  className="shrink-0 w-2 h-2 rounded-full"
+                  className="h-2 w-2 shrink-0 rounded-full"
                   style={{ background: COMMODITY_COLORS[entry.hs_code] ?? '#94A3B8' }}
                 />
-                <span className="text-slate-600 truncate">{entry.commodity}</span>
+                <span className="truncate text-slate-700">{entry.commodity}</span>
               </div>
-              <span className="font-mono text-slate-500 shrink-0">
+              <span className="shrink-0 font-mono tabular-nums text-slate-500">
                 {entry.share_pct?.toFixed(0)}%
               </span>
             </div>

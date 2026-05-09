@@ -21,9 +21,8 @@ test_mape: float = 0.0
 test_r2: float = 0.0
 master_df: pd.DataFrame = None
 
-# Per-commodity MAPE from Notebook 3 test results (Jan 2024 – Dec 2025)
-# Used to compute per-commodity confidence bands
-COMMODITY_MAPE: dict[str, float] = {
+# Default per-HS MAPE (confidence bands); overridden if `commodity_mape` is in pickle
+_FALLBACK_COMMODITY_MAPE: dict[str, float] = {
     "6203": 11.0,   # Mens Suits
     "9018": 12.0,   # Medical Instruments
     "6302": 12.0,   # Bed Linens
@@ -36,6 +35,8 @@ COMMODITY_MAPE: dict[str, float] = {
     "1207": 109.0,  # Oil Seeds
 }
 
+COMMODITY_MAPE: dict[str, float] = dict(_FALLBACK_COMMODITY_MAPE)
+
 
 def load_artifacts() -> None:
     """
@@ -44,6 +45,7 @@ def load_artifacts() -> None:
     """
     global model, FEATURE_COLS, hs_categories, HS_LABELS
     global train_cutoff, test_mape, test_r2, master_df
+    global COMMODITY_MAPE
 
     # Resolve paths relative to backend/ (where uvicorn is run from)
     backend_dir = Path(__file__).parent.parent
@@ -64,7 +66,21 @@ def load_artifacts() -> None:
     test_mape = float(artifact["test_mape"])
     test_r2 = float(artifact["test_r2"])
 
+    cm = artifact.get("commodity_mape")
+    if isinstance(cm, dict) and len(cm) > 0:
+        COMMODITY_MAPE = {str(k): float(v) for k, v in cm.items()}
+    else:
+        COMMODITY_MAPE = dict(_FALLBACK_COMMODITY_MAPE)
+
     master_df = pd.read_csv(data_path, dtype={"HS_Code": str})
+
+    try:
+        mtime = model_path.stat().st_mtime
+        from datetime import datetime, timezone
+
+        print(f"[ML] Pickle mtime      : {datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()}")
+    except OSError:
+        pass
 
     print(f"[ML] Model loaded     : XGBoost | MAPE={test_mape}% | R²={test_r2}")
     print(f"[ML] Train cutoff     : {train_cutoff}")

@@ -8,7 +8,7 @@ import {
 import { clsx } from 'clsx'
 import { useMacroStore } from '../store/macroStore'
 import { COMMODITY_META } from '../config/commodities'
-import { fetchHistorical, fetchCommodityMomentum } from '../api/analytics'
+import { fetchHistorical, fetchCommodityMomentum, fetchModelFitSeries } from '../api/analytics'
 import { fetchSingleVariable } from '../api/scenario'
 import { fetchMultiHorizon } from '../api/forecast'
 import { useSeasonality } from '../hooks/useSeasonality'
@@ -25,6 +25,10 @@ import ConfidenceBar     from '../components/ui/ConfidenceBar'
 import MomentumBadge     from '../components/ui/MomentumBadge'
 import SkeletonLoader, { SkeletonCard } from '../components/ui/SkeletonLoader'
 import ErrorState        from '../components/ui/ErrorState'
+import PageHeader        from '../components/ui/PageHeader'
+import SurfaceCard       from '../components/ui/SurfaceCard'
+import PageTabs          from '../components/ui/PageTabs'
+import { Layers }        from 'lucide-react'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -66,38 +70,17 @@ const TABS = [
   { id: 'performance',  label: 'Model Performance' },
 ]
 
-function TabBar({ active, onChange }) {
-  return (
-    <div className="flex border-b border-slate-200 mb-6 overflow-x-auto">
-      {TABS.map((t) => (
-        <button
-          key={t.id}
-          onClick={() => onChange(t.id)}
-          className={clsx(
-            'px-5 py-2.5 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors',
-            active === t.id
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          )}
-        >
-          {t.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 function SectionCard({ title, subtitle, children, className = '' }) {
   return (
-    <div className={clsx('bg-white rounded-xl border border-slate-200 shadow-sm p-5', className)}>
+    <SurfaceCard className={className}>
       {(title || subtitle) && (
         <div className="mb-4">
-          {title    && <h3 className="text-sm font-semibold text-slate-700">{title}</h3>}
-          {subtitle && <p  className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+          {title && <h3 className="font-display text-sm font-semibold text-slate-800">{title}</h3>}
+          {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
         </div>
       )}
       {children}
-    </div>
+    </SurfaceCard>
   )
 }
 
@@ -147,10 +130,10 @@ function OverviewTab({ hs, meta }) {
           { label: 'Avg Annual Growth',  value: stats?.avgGrowth != null ? `${stats.avgGrowth >= 0 ? '+' : ''}${stats.avgGrowth.toFixed(1)}%` : '—' },
           { label: 'Best Quarter',       value: meta.bestQuarter ?? '—' },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">{label}</p>
-            <p className="text-xl font-bold text-slate-900 font-mono">{value}</p>
-          </div>
+          <SurfaceCard key={label}>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+            <p className="font-mono text-xl font-bold text-slate-900">{value}</p>
+          </SurfaceCard>
         ))}
       </div>
 
@@ -218,9 +201,9 @@ function ForecastTab({ hs }) {
       {fcErr ? (
         <ErrorState message="Could not load forecast." onRetry={fcRefetch} />
       ) : (histL || fcL) ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <div className="h-96 animate-pulse bg-slate-100 rounded-lg" />
-        </div>
+        <SurfaceCard>
+          <div className="h-96 animate-pulse rounded-xl bg-gradient-to-br from-slate-100 to-indigo-50/30" />
+        </SurfaceCard>
       ) : (
         <ForecastChart
           historicalData={historical}
@@ -455,67 +438,66 @@ function PerfTooltip({ active, payload, label }) {
 }
 
 function ModelPerformanceTab({ hs, meta }) {
-  const { usd_pkr, brent_oil, us_confidence } = useMacroStore()
   const { data: modelInfo } = useModelInfo()
   const { data: commodityMapes } = useCommodityMapes()
 
   const testStart = nextMonth(modelInfo?.train_cutoff)
-  const mape = commodityMapes?.[hs] ?? meta.mape
+  const dataEnd   = modelInfo?.data_end || null
+  const mape      = commodityMapes?.[hs] ?? meta.mape
 
-  const { data: histResp, isLoading: histL } = useHistorical(hs, 24)
-  const { data: fcResp,   isLoading: fcL   } = useQuery({
-    queryKey: ['forecast', 'perf', hs, usd_pkr, brent_oil, us_confidence, testStart],
-    queryFn:  () => fetchMultiHorizon({
-      hs_code: hs, start_yyyymm: testStart, n_months: 24,
-      macro: { usd_pkr, brent_oil, us_confidence },
-    }),
+  /* One-step predictions per calendar month using macros from the CSV (same as API model). */
+  const { data: fitResp, isLoading: fitL, isError: fitErr, refetch: fitRefetch } = useQuery({
+    queryKey: ['model-fit', hs, testStart, dataEnd],
+    queryFn:  () => fetchModelFitSeries(hs, testStart, dataEnd),
     staleTime: 5 * 60 * 1000,
-    enabled: !!hs && !!testStart,
+    enabled: !!hs && !!testStart && !!dataEnd && dataEnd >= testStart,
   })
 
   const chartData = useMemo(() => {
-    const actualMap = {}
-    ;(histResp?.data ?? []).forEach((d) => { actualMap[d.month] = d.export_value_m })
-    return (fcResp?.forecast ?? []).map((p) => ({
+    return (fitResp?.points ?? []).map((p) => ({
       label:     fmtMonth(p.month),
-      actual:    actualMap[p.month] ?? null,
+      actual:    p.actual_m,
       predicted: p.predicted_m,
     }))
-  }, [histResp, fcResp])
+  }, [fitResp])
 
   const reliability = reliabilityLabel(mape ?? 50)
-  const isLoading   = histL || fcL
+  const isLoading   = fitL
 
   const testStartLabel = fmtMonthYear(testStart)
-  const trainCutoffLabel = fmtMonthYear(modelInfo?.train_cutoff)
+  const dataEndLabel = fmtMonthYear(fitResp?.end_yyyymm ?? dataEnd)
 
   return (
     <div className="space-y-6">
       {/* MAPE / R² / reliability */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Model MAPE</p>
-          <p className="text-3xl font-bold text-slate-900 font-mono">{mape ?? '—'}%</p>
-          <p className="text-xs text-slate-400 mt-1">Mean Absolute Pct Error on test set</p>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">R²</p>
-          <p className="text-3xl font-bold text-slate-900 font-mono">{meta.r2 ?? '—'}</p>
-          <p className="text-xs text-slate-400 mt-1">Variance explained by the model</p>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Reliability</p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <SurfaceCard gradientTop>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Model MAPE</p>
+          <p className="font-mono text-3xl font-bold text-slate-900">{mape ?? '—'}%</p>
+          <p className="mt-1 text-xs text-slate-500">
+            From loaded pickle (retrain + restart API). Chart uses one-step preds with historic macros.
+          </p>
+        </SurfaceCard>
+        <SurfaceCard>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">R²</p>
+          <p className="font-mono text-3xl font-bold text-slate-900">{meta.r2 ?? '—'}</p>
+          <p className="mt-1 text-xs text-slate-500">Variance explained by the model</p>
+        </SurfaceCard>
+        <SurfaceCard>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Reliability</p>
           <p className={clsx('text-3xl font-bold', reliability.color)}>{reliability.label}</p>
           <ConfidenceBar mape={mape} horizon={1} showLabel={false} className="mt-3" />
-        </div>
+        </SurfaceCard>
       </div>
 
       {/* Actual vs Predicted chart */}
       <SectionCard
-        title={`Actual vs Model Prediction — Test Period (${testStartLabel}–${trainCutoffLabel ? 'present' : '—'})`}
-        subtitle="Compares held-out actuals against the model's predictions under current macro assumptions"
+        title={`Actual vs Model Prediction (${testStartLabel}–${dataEndLabel})`}
+        subtitle="Red line: champion XGB model via make_prediction for each month using PKR/oil/confidence from that month's training row (same inference path as production)."
       >
-        {isLoading ? (
+        {fitErr ? (
+          <ErrorState message={String(fitErr?.message ?? 'Could not load model-fit series')} onRetry={fitRefetch} />
+        ) : isLoading ? (
           <div className="h-72 animate-pulse bg-slate-100 rounded-lg" />
         ) : (
           <ResponsiveContainer width="100%" height={280}>
@@ -589,55 +571,45 @@ export default function CommodityExplorer() {
   }
 
   return (
-    <div>
-      {/* Page header */}
-      <div className="mb-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-1 flex-wrap">
-              <h1 className="text-2xl font-bold text-slate-900">
-                {meta.name ?? `HS ${hs}`}
-              </h1>
-              <span className="font-mono text-sm text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
-                HS {hs}
-              </span>
-              {meta.sector && (
-                <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                  {meta.sector}
-                </span>
-              )}
-            </div>
-            {/* Header stats */}
-            <div className="flex items-center gap-4 flex-wrap mt-2">
-              {momentum && (
-                <>
-                  <MomentumBadge direction={momentum.direction} value={Math.abs(momentum.momentum_3m_pct)} />
-                  <span className="text-sm text-slate-500">
-                    Last actual: <span className="font-mono font-semibold text-slate-800">${momentum.last_actual_m?.toFixed(1)}M</span>
-                  </span>
-                </>
-              )}
-              {headerMape != null && (
-                <span className="text-sm text-slate-500">
-                  MAPE <span className="font-mono font-semibold text-slate-700">{headerMape}%</span>
-                </span>
-              )}
-              {meta.r2 && (
-                <span className="text-sm text-slate-500">
-                  R² <span className="font-mono font-semibold text-slate-700">{meta.r2}</span>
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Commodity picker */}
-          <div className="w-56 shrink-0">
+    <div className="pb-8">
+      <PageHeader
+        eyebrow="Commodity deep-dive"
+        title={meta.name ?? `HS ${hs}`}
+        description={meta.sector ? `${meta.sector} · full analytics for this HS code` : `Analytics and forecasts for HS ${hs}`}
+        icon={Layers}
+        right={
+          <div className="w-full min-w-[200px] sm:w-56">
             <CommoditySelector value={hs} onChange={handleHsChange} label="" />
           </div>
+        }
+      >
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-mono text-xs text-slate-600">HS {hs}</span>
+          {momentum && (
+            <>
+              <MomentumBadge direction={momentum.direction} value={Math.abs(momentum.momentum_3m_pct)} />
+              <span className="text-sm text-slate-600">
+                Last actual{' '}
+                <span className="font-mono font-semibold text-slate-800">
+                  ${momentum.last_actual_m?.toFixed(1)}M
+                </span>
+              </span>
+            </>
+          )}
+          {headerMape != null && (
+            <span className="text-sm text-slate-600">
+              MAPE <span className="font-mono font-semibold text-slate-800">{headerMape}%</span>
+            </span>
+          )}
+          {meta.r2 && (
+            <span className="text-sm text-slate-600">
+              R² <span className="font-mono font-semibold text-slate-800">{meta.r2}</span>
+            </span>
+          )}
         </div>
-      </div>
+      </PageHeader>
 
-      <TabBar active={activeTab} onChange={setActiveTab} />
+      <PageTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'overview'    && <OverviewTab         hs={hs} meta={meta} />}
       {activeTab === 'forecast'    && <ForecastTab         hs={hs} />}

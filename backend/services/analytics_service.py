@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from ml import loader
-from services.forecast_service import forecast_n_months
+from services.forecast_service import forecast_n_months, make_prediction
 
 MONTH_NAMES = {
     1: "January", 2: "February", 3: "March", 4: "April",
@@ -127,6 +127,52 @@ def get_currency_sensitivity(
         r["sensitivity_rank"] = i + 1
 
     return results
+
+
+def _month_seriesInclusive(start_yyyymm: int, end_yyyymm: int) -> list[int]:
+    """Every calendar month from start_yyyymm through end_yyyymm inclusive."""
+    y, m = divmod(start_yyyymm, 100)
+    ye, me = divmod(end_yyyymm, 100)
+    out: list[int] = []
+    cy, cm = y, m
+    while (cy < ye) or (cy == ye and cm <= me):
+        out.append(cy * 100 + cm)
+        cm += 1
+        if cm > 12:
+            cm = 1
+            cy += 1
+    return out
+
+
+def model_fit_vs_actual(hs_code: str, start_yyyymm: int, end_yyyymm: int) -> list[dict]:
+    """
+    One-step retrospective fit on the champion model:
+    For each month, feeds the same macro columns as recorded in Master_FYP_Dataset.csv
+    (contemporaneous drivers) plus historical lag features resolved from master_df —
+    identical code path as live `make_prediction` / `/forecast`.
+
+    Differs from a 24‑month recursive forecast with today's macro pinned (which hides
+    how the model behaved over the real test timeline).
+    """
+    hs_code = str(hs_code)
+    md = loader.master_df
+    rows: list[dict] = []
+    for yyyymm in _month_seriesInclusive(int(start_yyyymm), int(end_yyyymm)):
+        sub = md[(md["HS_Code"] == hs_code) & (md["Date_YYYYMM"] == int(yyyymm))]
+        if len(sub) == 0:
+            continue
+        r = sub.iloc[0]
+        pkr = float(r["USD_PKR_Close"])
+        oil = float(r["Brent_Oil_Avg"])
+        conf = float(r["US_Consumer_Confidence"])
+        actual_usd = float(r["Export_Value_USD"])
+        pred_usd = make_prediction(hs_code, int(yyyymm), pkr, oil, conf)
+        rows.append({
+            "month":       int(yyyymm),
+            "actual_m":    round(actual_usd / 1e6, 3),
+            "predicted_m": round(pred_usd / 1e6, 3),
+        })
+    return rows
 
 
 def get_historical(hs_code: str, months: int = 24) -> dict:

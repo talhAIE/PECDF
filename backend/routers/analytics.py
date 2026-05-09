@@ -5,6 +5,7 @@ from schemas.analytics import (
     MomentumResponse, SingleMomentumResponse, MomentumItem,
     CurrencySensitivityResponse, SensitivityItem,
     HistoricalResponse, HistoricalPoint,
+    ModelFitResponse, ModelFitPoint,
 )
 from services import analytics_service
 
@@ -63,6 +64,37 @@ def currency_sensitivity(
         pkr_range_min=pkr_min,
         pkr_range_max=pkr_max,
         commodities=[SensitivityItem(**d) for d in data],
+    )
+
+
+# ─── Model fit — actual vs one-step preds (historic macros) ───────────────
+
+@router.get("/model-fit/{hs_code}", response_model=ModelFitResponse)
+def model_fit_series(
+    hs_code: str,
+    start_yyyymm: int = Query(..., description="First month YYYYMM (typically first test month)"),
+    end_yyyymm: int = Query(..., description="Last month YYYYMM inclusive (typically data_end)"),
+):
+    """Retrospective predictions from the loaded champion model (`loader.model`)."""
+    if hs_code not in loader.hs_categories:
+        raise HTTPException(status_code=404, detail=f"Unknown HS code: {hs_code}")
+    if start_yyyymm > end_yyyymm:
+        raise HTTPException(status_code=400, detail="start_yyyymm must be <= end_yyyymm")
+
+    pts = analytics_service.model_fit_vs_actual(hs_code, start_yyyymm, end_yyyymm)
+    if not pts:
+        raise HTTPException(
+            status_code=404,
+            detail="No overlapping master rows for that range.",
+        )
+
+    end_eff = pts[-1]["month"]
+    return ModelFitResponse(
+        hs_code=hs_code,
+        commodity=loader.HS_LABELS.get(hs_code, hs_code),
+        start_yyyymm=pts[0]["month"],
+        end_yyyymm=end_eff,
+        points=[ModelFitPoint(**p) for p in pts],
     )
 
 

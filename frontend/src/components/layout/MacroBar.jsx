@@ -198,11 +198,11 @@ export default function MacroBar() {
     : 'text-blue-500 hover:text-blue-700'
 
   return (
-    <div className="sticky top-14 z-40 bg-slate-50 border-b border-slate-200 h-13 flex items-center px-6 gap-6">
+    <div className="sticky top-14 z-40 flex h-auto min-h-[3.25rem] flex-wrap items-center gap-4 border-b border-slate-200/80 bg-white/70 px-4 py-2.5 shadow-sm shadow-slate-900/5 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 sm:gap-6 sm:px-6">
 
       {/* Label */}
-      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider shrink-0">
-        Market Inputs
+      <span className="font-display shrink-0 text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600/80">
+        Market inputs
       </span>
 
       {/* Inputs */}

@@ -11,7 +11,9 @@ import ConfidenceBar from '../components/ui/ConfidenceBar'
 import DataTable from '../components/ui/DataTable'
 import SkeletonLoader from '../components/ui/SkeletonLoader'
 import ErrorState from '../components/ui/ErrorState'
-import { TrendingUp, TrendingDown } from 'lucide-react'
+import PageHeader from '../components/ui/PageHeader'
+import SurfaceCard from '../components/ui/SurfaceCard'
+import { TrendingUp, TrendingDown, LineChart } from 'lucide-react'
 import { clsx } from 'clsx'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -149,32 +151,31 @@ export default function ForecastCenter() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div>
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Forecast Center</h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Multi-horizon export forecasts driven by current macro conditions
-        </p>
-      </div>
+    <div className="pb-8">
+      <PageHeader
+        eyebrow="Forecasts"
+        title="Forecast center"
+        description="Multi-horizon export forecasts driven by the macro inputs in the toolbar. Tune commodity, horizon, and confidence bands."
+        icon={LineChart}
+      />
 
-      <div className="flex gap-6 items-start">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
         {/* ── Left panel ─────────────────────────────────────────────────── */}
-        <aside className="w-72 shrink-0 space-y-4">
+        <aside className="w-full shrink-0 space-y-4 lg:w-72">
           {/* Commodity selector */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <SurfaceCard>
             <CommoditySelector value={hs} onChange={setHs} />
-          </div>
+          </SurfaceCard>
 
           {/* Horizon selector */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <SurfaceCard>
             <HorizonSelector value={horizon} onChange={setHorizon} />
-          </div>
+          </SurfaceCard>
 
           {/* Key metrics */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
-              Key Metrics
+          <SurfaceCard gradientTop>
+            <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Key metrics
             </h3>
 
             {fcLoading ? (
@@ -205,32 +206,32 @@ export default function ForecastCenter() {
             ) : (
               <p className="text-xs text-slate-400">No forecast data</p>
             )}
-          </div>
+          </SurfaceCard>
 
           {/* Commodity about */}
           {meta.about && (
-            <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1.5">
+            <SurfaceCard className="border-indigo-100/50 bg-gradient-to-br from-slate-50/80 to-indigo-50/20">
+              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 About
               </p>
-              <p className="text-xs text-slate-600 leading-relaxed">{meta.about}</p>
+              <p className="text-xs leading-relaxed text-slate-600">{meta.about}</p>
               {mape != null && (
-                <div className="flex gap-3 mt-3 text-xs text-slate-500">
+                <div className="mt-3 flex gap-3 text-xs text-slate-500">
                   <span>MAPE <span className="font-semibold text-slate-700">{mape}%</span></span>
                   <span>R² <span className="font-semibold text-slate-700">{meta.r2 ?? '—'}</span></span>
                 </div>
               )}
-            </div>
+            </SurfaceCard>
           )}
         </aside>
 
         {/* ── Right content ───────────────────────────────────────────────── */}
-        <div className="flex-1 min-w-0 space-y-4">
+        <div className="min-w-0 flex-1 space-y-5">
           {/* Chart header with band toggle */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-800">{commodityName}</h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h2 className="font-display text-lg font-bold text-slate-900">{commodityName}</h2>
+              <p className="mt-0.5 text-xs text-slate-500">
                 {startMonth
                   ? `${fmtMonthFull(startMonth)} – ${fmtMonthFull(endMonth)}`
                   : `${horizon}-month forecast`
@@ -242,14 +243,14 @@ export default function ForecastCenter() {
                 )}
               </p>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <label className="flex cursor-pointer select-none items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
               <input
                 type="checkbox"
                 checked={showBands}
                 onChange={(e) => setShowBands(e.target.checked)}
-                className="w-4 h-4 accent-blue-600 rounded"
+                className="h-4 w-4 rounded accent-indigo-600"
               />
-              <span className="text-xs text-slate-500">Confidence bands</span>
+              <span className="text-xs font-medium text-slate-600">Confidence bands</span>
             </label>
           </div>
 
@@ -260,9 +261,9 @@ export default function ForecastCenter() {
               onRetry={() => { histRefetch(); fcRefetch() }}
             />
           ) : isLoading ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-              <div className="h-96 animate-pulse bg-slate-100 rounded-lg" />
-            </div>
+            <SurfaceCard>
+              <div className="h-96 animate-pulse rounded-xl bg-gradient-to-br from-slate-100 to-indigo-50/40" />
+            </SurfaceCard>
           ) : (
             <ForecastChart
               historicalData={historicalData}

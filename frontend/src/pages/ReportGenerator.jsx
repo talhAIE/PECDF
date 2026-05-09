@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
 import { FileText, Download, RefreshCw, ChevronDown } from 'lucide-react'
+import MarkdownMessage from '../components/chat/MarkdownMessage'
 import { useGenerateReport } from '../hooks/useGenerateReport'
 import { useMacroStore }       from '../store/macroStore'
 import { COMMODITY_META } from '../config/commodities'
 import { downloadReportAsPDF } from '../utils/pdfExport'
+import PageHeader from '../components/ui/PageHeader'
+import SurfaceCard from '../components/ui/SurfaceCard'
 
 const COMMODITIES = Object.entries(COMMODITY_META).map(([hs, m]) => ({ hs, name: m.name }))
 
@@ -20,21 +22,24 @@ const TONE_OPTIONS = [
 ]
 
 function SectionLabel({ children }) {
-  return <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{children}</p>
+  return (
+    <p className="font-display mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">{children}</p>
+  )
 }
 
 function OptionCard({ option, selected, onClick }) {
   return (
     <button
+      type="button"
       onClick={() => onClick(option.value)}
-      className={`w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-all ${
+      className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm transition-all ${
         selected
-          ? 'border-blue-500 bg-blue-50 text-blue-800'
+          ? 'border-indigo-500 bg-indigo-50 text-indigo-950 shadow-sm ring-1 ring-indigo-200/60'
           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
       }`}
     >
-      <span className="font-medium block">{option.label}</span>
-      <span className={`text-xs mt-0.5 block ${selected ? 'text-blue-600' : 'text-slate-400'}`}>
+      <span className="block font-medium">{option.label}</span>
+      <span className={`mt-0.5 block text-xs ${selected ? 'text-indigo-700' : 'text-slate-400'}`}>
         {option.description}
       </span>
     </button>
@@ -72,7 +77,7 @@ function ConfigPanel({ config, onChange, isPending }) {
             <select
               value={config.hs_code ?? ''}
               onChange={e => onChange({ ...config, hs_code: e.target.value || null })}
-              className="w-full appearance-none border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+              className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-8 text-sm text-slate-800 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
             >
               <option value="">Select commodity…</option>
               {COMMODITIES.map(c => (
@@ -88,7 +93,7 @@ function ConfigPanel({ config, onChange, isPending }) {
       <div>
         <div className="flex justify-between items-center mb-2">
           <SectionLabel>Forecast Horizon</SectionLabel>
-          <span className="text-xs font-mono font-semibold text-blue-600">{config.horizon} month{config.horizon > 1 ? 's' : ''}</span>
+          <span className="font-mono text-xs font-semibold text-indigo-600">{config.horizon} month{config.horizon > 1 ? 's' : ''}</span>
         </div>
         <input
           type="range"
@@ -96,7 +101,7 @@ function ConfigPanel({ config, onChange, isPending }) {
           max={12}
           value={config.horizon}
           onChange={e => onChange({ ...config, horizon: +e.target.value })}
-          className="w-full accent-blue-600"
+          className="w-full accent-indigo-600"
         />
         <div className="flex justify-between text-[10px] text-slate-400 mt-1">
           <span>1 month</span>
@@ -122,7 +127,7 @@ function ConfigPanel({ config, onChange, isPending }) {
       {/* macro (read-only) */}
       <div>
         <SectionLabel>Macro Inputs (from MacroBar)</SectionLabel>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 space-y-1.5">
+        <div className="space-y-1.5 rounded-xl border border-indigo-100/80 bg-gradient-to-br from-slate-50 to-indigo-50/30 px-3 py-2.5">
           {[
             { label: 'USD/PKR',        value: usd_pkr.toFixed(1) },
             { label: 'Brent Oil',      value: `$${brent_oil.toFixed(1)}` },
@@ -138,9 +143,10 @@ function ConfigPanel({ config, onChange, isPending }) {
 
       {/* generate button */}
       <button
+        type="button"
         onClick={() => !isPending && onChange({ ...config, _trigger: Date.now() })}
         disabled={isPending || (config.scope === 'single' && !config.hs_code)}
-        className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-700 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all hover:from-indigo-500 hover:to-violet-600 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {isPending
           ? <><RefreshCw size={15} className="animate-spin" /> Generating…</>
@@ -201,63 +207,62 @@ export default function ReportGenerator() {
 
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6 pb-8">
 
-      {/* header */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
-          <FileText size={20} className="text-emerald-600" />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold text-slate-800">Report Generator</h1>
-          <p className="text-xs text-slate-500">AI-written export analysis reports from live forecast data</p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Reports"
+        title="Report generator"
+        description="AI-generated narrative from live forecast outputs, seasonality, and momentum — aligned with your macro bar and chosen scope."
+        icon={FileText}
+      />
 
-      <div className="flex gap-5 items-start">
+      <div className="flex flex-col items-start gap-6 lg:flex-row">
 
         {/* config panel */}
-        <div className="w-64 shrink-0">
-          <ConfigPanel config={config} onChange={handleConfigChange} isPending={isPending} />
+        <div className="w-full shrink-0 lg:w-64">
+          <SurfaceCard gradientTop>
+            <ConfigPanel config={config} onChange={handleConfigChange} isPending={isPending} />
+          </SurfaceCard>
         </div>
 
         {/* report output */}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           {!data && !isPending && !isError && (
-            <div className="flex flex-col items-center justify-center h-80 rounded-xl border-2 border-dashed border-slate-200 text-center gap-3">
+            <SurfaceCard className="flex min-h-[20rem] flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-200/90 bg-slate-50/50 text-center">
               <FileText size={32} className="text-slate-300" />
               <div>
-                <p className="text-slate-500 font-medium text-sm">No report yet</p>
-                <p className="text-slate-400 text-xs mt-1">Configure options and click Generate Report</p>
+                <p className="text-sm font-medium text-slate-600">No report yet</p>
+                <p className="mt-1 text-xs text-slate-400">Configure options and click Generate report</p>
               </div>
-            </div>
+            </SurfaceCard>
           )}
 
           {isPending && (
-            <div className="flex flex-col items-center justify-center h-80 rounded-xl border border-slate-200 bg-white gap-4">
-              <RefreshCw size={28} className="text-blue-500 animate-spin" />
+            <SurfaceCard className="flex min-h-[20rem] flex-col items-center justify-center gap-4">
+              <RefreshCw size={28} className="animate-spin text-indigo-500" />
               <div className="text-center">
-                <p className="text-slate-700 font-medium text-sm">Generating report…</p>
-                <p className="text-slate-400 text-xs mt-1">This may take 15–30 seconds</p>
+                <p className="text-sm font-medium text-slate-700">Generating report…</p>
+                <p className="mt-1 text-xs text-slate-400">This may take 15–30 seconds</p>
               </div>
-            </div>
+            </SurfaceCard>
           )}
 
           {isError && !isPending && (
-            <div className="flex flex-col items-center justify-center h-80 rounded-xl border border-red-200 bg-red-50 gap-3">
-              <p className="text-red-600 font-medium text-sm">Report generation failed</p>
-              <p className="text-red-400 text-xs">Check that the backend is running and try again.</p>
-            </div>
+            <SurfaceCard className="flex min-h-[20rem] flex-col items-center justify-center gap-2 border-rose-200 bg-rose-50/90">
+              <p className="text-sm font-medium text-rose-800">Report generation failed</p>
+              <p className="text-xs text-rose-600">Check that the backend is running and try again.</p>
+            </SurfaceCard>
           )}
 
           {data && !isPending && (
-            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+            <SurfaceCard className="overflow-hidden" padding={false} gradientTop>
               {/* toolbar */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50">
-                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Report</span>
+              <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50 to-indigo-50/30 px-5 py-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">Report output</span>
                 <button
+                  type="button"
                   onClick={() => downloadReportAsPDF(data)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-xs text-blue-700 hover:bg-blue-100 transition-colors font-medium"
+                  className="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-800 transition-colors hover:bg-indigo-100"
                 >
                   <Download size={12} />
                   Download PDF
@@ -265,13 +270,13 @@ export default function ReportGenerator() {
               </div>
 
               {/* content */}
-              <div className="px-6 py-5 max-h-[70vh] overflow-y-auto">
+              <div className="max-h-[70vh] overflow-y-auto px-6 py-6">
                 <ReportMeta data={data} />
-                <div className="prose prose-sm max-w-none text-slate-800">
-                  <ReactMarkdown>{data.report_text}</ReactMarkdown>
-                </div>
+                <article className="border-t border-slate-100 pt-6">
+                  <MarkdownMessage>{data.report_text}</MarkdownMessage>
+                </article>
               </div>
-            </div>
+            </SurfaceCard>
           )}
         </div>
       </div>

@@ -6,7 +6,7 @@ export function useModelInfo() {
   return useQuery({
     queryKey: ['model-info'],
     queryFn: fetchHealth,
-    staleTime: Infinity,
+    staleTime: 60 * 1000,
     retry: 1,
   })
 }
@@ -16,7 +16,7 @@ export function useCommodityMapes() {
   return useQuery({
     queryKey: ['commodity-mapes'],
     queryFn: fetchCommodities,
-    staleTime: Infinity,
+    staleTime: 60 * 1000,
     retry: 1,
     select: (data) =>
       Object.fromEntries((data ?? []).map((c) => [c.hs_code, c.test_mape])),

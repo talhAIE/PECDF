@@ -71,7 +71,12 @@ SEASONALITY INSIGHTS:
 MOMENTUM:
 {momentum_highlights}
 
-Write the report with these exact sections:
+Format the report as GitHub-Flavored Markdown for a polished layout:
+- Start with a single document title as a level-1 heading, e.g. "# EXPORT OUTLOOK REPORT"
+- Use level-2 headings for each numbered section, e.g. "## 1. EXECUTIVE SUMMARY", "## 2. COMMODITY FORECASTS", etc. (include the number and title in the heading text)
+- Use bullet lists under each section where appropriate; start each commodity line with **CommodityName**: for the label
+
+Section content requirements:
 1. EXECUTIVE SUMMARY (2-3 paragraphs: overall outlook, key risks, macro context)
 2. COMMODITY FORECASTS (one paragraph per commodity: predicted value, confidence, trend)
 3. SEASONAL CONSIDERATIONS (which commodities are entering peak/off-peak season)

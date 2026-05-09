@@ -3,7 +3,7 @@ import { LogOut, BarChart2 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
 const NAV_LINKS = [
-  { to: '/',           label: 'Dashboard'   },
+  { to: '/dashboard', label: 'Dashboard'   },
   { to: '/forecast',   label: 'Forecast'    },
   { to: '/scenario',   label: 'Scenarios'   },
   { to: '/commodity/1006', label: 'Commodities' },
@@ -21,16 +21,16 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 h-14 bg-white border-b border-slate-200 flex items-center px-6">
+    <nav className="sticky top-0 z-50 flex h-14 items-center border-b border-slate-200/80 bg-white/85 px-6 shadow-sm shadow-slate-900/5 backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
 
       {/* Logo */}
-      <div className="flex items-center gap-2 mr-8 shrink-0">
-        <BarChart2 size={18} className="text-blue-600" />
-        <span className="font-bold text-blue-600 font-mono text-base leading-none">PECDF</span>
-        <span className="text-slate-300 text-xs hidden lg:block ml-1">
-          Pakistan Export Forecasting
+      <NavLink to="/dashboard" className="mr-8 flex shrink-0 items-center gap-2 rounded-lg outline-offset-2 hover:opacity-90">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-700 text-white shadow-md shadow-indigo-600/30">
+          <BarChart2 size={17} strokeWidth={2.5} />
         </span>
-      </div>
+        <span className="font-display text-base font-bold leading-none tracking-tight text-slate-900">PECDF</span>
+        <span className="ml-1 hidden text-xs text-slate-400 lg:block">Pakistan Export Forecasting</span>
+      </NavLink>
 
       {/* Nav links */}
       <div className="flex items-center gap-1 flex-1">
@@ -38,12 +38,12 @@ export default function Navbar() {
           <NavLink
             key={to}
             to={to}
-            end={to === '/'}
+            end={to === '/dashboard'}
             className={({ isActive }) =>
-              `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'text-blue-600 bg-blue-50'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  ? 'bg-indigo-50 font-semibold text-indigo-700 shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
               }`
             }
           >
@@ -55,7 +55,7 @@ export default function Navbar() {
       {/* User pill + logout */}
       <div className="flex items-center gap-3 shrink-0">
         {user?.email && (
-          <span className="hidden sm:block bg-slate-100 text-slate-600 text-xs px-3 py-1 rounded-full font-medium max-w-[180px] truncate">
+          <span className="hidden max-w-[180px] truncate rounded-full border border-slate-200/80 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 sm:block">
             {user.email}
           </span>
         )}

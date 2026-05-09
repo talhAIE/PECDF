@@ -10,8 +10,18 @@ import CommoditySelector from '../components/forms/CommoditySelector'
 import HorizonSelector   from '../components/forms/HorizonSelector'
 import DataTable         from '../components/ui/DataTable'
 import SkeletonLoader, { SkeletonChart } from '../components/ui/SkeletonLoader'
+import PageHeader from '../components/ui/PageHeader'
+import SurfaceCard from '../components/ui/SurfaceCard'
+import PageTabs from '../components/ui/PageTabs'
+import { Sliders } from 'lucide-react'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
+
+const SCENARIO_TABS = [
+  { id: 'single', label: 'Single variable' },
+  { id: 'multi', label: 'Multi-variable' },
+  { id: 'compare', label: 'Compare scenarios' },
+]
 
 const VARIABLE_META = {
   pkr:  { label: 'USD/PKR Rate',           unit: 'Rate',   defaultMin: 250, defaultMax: 350 },
@@ -26,32 +36,6 @@ function getTargetMonth() {
 
 // ── Shared atoms ──────────────────────────────────────────────────────────────
 
-function TabBar({ active, onChange }) {
-  const TABS = [
-    { id: 'single',  label: 'Single Variable'    },
-    { id: 'multi',   label: 'Multi-Variable'     },
-    { id: 'compare', label: 'Compare Scenarios'  },
-  ]
-  return (
-    <div className="flex border-b border-slate-200 mb-6">
-      {TABS.map((t) => (
-        <button
-          key={t.id}
-          onClick={() => onChange(t.id)}
-          className={clsx(
-            'px-5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
-            active === t.id
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          )}
-        >
-          {t.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 function FieldInput({ label, value, onChange, min, max, step = 0.5 }) {
   return (
     <div className="flex items-center justify-between gap-3">
@@ -63,20 +47,21 @@ function FieldInput({ label, value, onChange, min, max, step = 0.5 }) {
         max={max}
         step={step}
         onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) onChange(v) }}
-        className="w-24 border border-slate-200 rounded-lg px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-24 rounded-lg border border-slate-200 px-2 py-1 font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
       />
     </div>
   )
 }
 
-function RunButton({ onClick, loading, children = 'Run Scenario' }) {
+function RunButton({ onClick, loading, children = 'Run scenario' }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={loading}
       className={clsx(
-        'w-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm transition-colors',
-        loading && 'opacity-60 cursor-not-allowed'
+        'w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all hover:from-indigo-500 hover:to-violet-600 disabled:cursor-not-allowed disabled:opacity-55',
+        loading && 'cursor-not-allowed'
       )}
     >
       {loading ? 'Running…' : children}
@@ -86,9 +71,11 @@ function RunButton({ onClick, loading, children = 'Run Scenario' }) {
 
 function EmptyChart({ message }) {
   return (
-    <div className="bg-white rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center h-64">
-      <p className="text-sm text-slate-400 text-center px-4">{message}</p>
-    </div>
+    <SurfaceCard className="border-2 border-dashed border-slate-200/90 bg-slate-50/60">
+      <div className="flex h-64 items-center justify-center px-4">
+        <p className="text-center text-sm text-slate-500">{message}</p>
+      </div>
+    </SurfaceCard>
   )
 }
 
@@ -187,61 +174,61 @@ function SingleVariableTab() {
   ]
 
   return (
-    <div className="flex gap-6 items-start">
+    <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
       {/* Controls */}
-      <aside className="w-72 shrink-0 space-y-4">
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
+      <aside className="w-full shrink-0 space-y-4 lg:w-72">
+        <SurfaceCard className="space-y-4">
           <CommoditySelector value={hs} onChange={setHs} />
           <HorizonSelector value={horizon} onChange={setHorizon} />
-        </div>
+        </SurfaceCard>
 
         {/* Variable selector + range */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sweep Variable</p>
+        <SurfaceCard className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Sweep variable</p>
           {Object.entries(VARIABLE_META).map(([key, m]) => (
-            <label key={key} className="flex items-center gap-2 cursor-pointer">
+            <label key={key} className="flex cursor-pointer items-center gap-2">
               <input
                 type="radio" name="sv-variable" value={key}
                 checked={variable === key}
                 onChange={() => handleVariableChange(key)}
-                className="accent-blue-600"
+                className="accent-indigo-600"
               />
               <span className="text-sm text-slate-700">{m.label}</span>
             </label>
           ))}
           <div className="grid grid-cols-2 gap-2 pt-1">
             <div>
-              <p className="text-xs text-slate-400 mb-0.5">Min</p>
+              <p className="mb-0.5 text-xs text-slate-400">Min</p>
               <input
                 type="number" value={rangeMin}
                 onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) setRangeMin(v) }}
-                className="w-full border border-slate-200 rounded-lg px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-200 px-2 py-1 font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
               />
             </div>
             <div>
-              <p className="text-xs text-slate-400 mb-0.5">Max</p>
+              <p className="mb-0.5 text-xs text-slate-400">Max</p>
               <input
                 type="number" value={rangeMax}
                 onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) setRangeMax(v) }}
-                className="w-full border border-slate-200 rounded-lg px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-200 px-2 py-1 font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
               />
             </div>
           </div>
-        </div>
+        </SurfaceCard>
 
         {/* Fixed values */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-2">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Fixed Values</p>
+        <SurfaceCard className="space-y-2">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">Fixed values</p>
           {variable !== 'pkr'  && <FieldInput label="USD/PKR Rate"  value={fixedPkr}  onChange={setFixedPkr}  min={120} max={560} />}
           {variable !== 'oil'  && <FieldInput label="Brent Oil ($)" value={fixedOil}  onChange={setFixedOil}  min={10} max={350} />}
           {variable !== 'conf' && <FieldInput label="US Confidence" value={fixedConf} onChange={setFixedConf} min={15} max={999} />}
-        </div>
+        </SurfaceCard>
 
         <RunButton onClick={handleRun} loading={mutation.isPending} />
       </aside>
 
       {/* Results */}
-      <div className="flex-1 min-w-0 space-y-4">
+      <div className="min-w-0 flex-1 space-y-4">
         {/* Sensitivity insight card */}
         {result && (
           <SensitivityInsight
@@ -251,17 +238,17 @@ function SingleVariableTab() {
           />
         )}
 
-        <div className={clsx(mutation.isPending && 'opacity-60 pointer-events-none')}>
+        <div className={clsx(mutation.isPending && 'pointer-events-none opacity-60')}>
           {mutation.isPending ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <SurfaceCard>
               <SkeletonLoader lines={6} />
-            </div>
+            </SurfaceCard>
           ) : result ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4">
+            <SurfaceCard>
+              <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-800">{result.commodity}</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <h3 className="font-display text-sm font-semibold text-slate-800">{result.commodity}</h3>
+                  <p className="mt-0.5 text-xs text-slate-500">
                     Forecast ($M) across {vmeta?.label} range {rangeMin}–{rangeMax}
                   </p>
                 </div>
@@ -272,9 +259,9 @@ function SingleVariableTab() {
                 variable={variable}
                 currentValue={currentValue}
               />
-            </div>
+            </SurfaceCard>
           ) : (
-            <EmptyChart message="Configure inputs above and click Run Scenario" />
+            <EmptyChart message="Configure inputs above and click Run scenario" />
           )}
         </div>
 
@@ -343,23 +330,23 @@ function MultiVariableTab() {
   }
 
   return (
-    <div className="flex gap-6 items-start">
+    <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
       {/* Controls */}
-      <aside className="w-72 shrink-0 space-y-4">
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
+      <aside className="w-full shrink-0 space-y-4 lg:w-72">
+        <SurfaceCard className="space-y-4">
           <CommoditySelector value={hs} onChange={setHs} />
           <HorizonSelector value={horizon} onChange={setHorizon} />
-        </div>
+        </SurfaceCard>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
+        <SurfaceCard className="space-y-4">
           {/* PKR values */}
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">PKR Values (3 points)</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">PKR values (3 points)</p>
             <div className="grid grid-cols-3 gap-1.5">
               {pkrVals.map((v, i) => (
                 <input key={i} type="number" value={v}
                   onChange={(e) => { const n = parseFloat(e.target.value); if (!isNaN(n)) updateVal(pkrVals, setPkrVals, i, n) }}
-                  className="w-full border border-slate-200 rounded-lg px-1.5 py-1 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-slate-200 px-1.5 py-1 text-center font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
                 />
               ))}
             </div>
@@ -367,47 +354,47 @@ function MultiVariableTab() {
 
           {/* Oil values */}
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Oil Values (3 points)</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Oil values (3 points)</p>
             <div className="grid grid-cols-3 gap-1.5">
               {oilVals.map((v, i) => (
                 <input key={i} type="number" value={v}
                   onChange={(e) => { const n = parseFloat(e.target.value); if (!isNaN(n)) updateVal(oilVals, setOilVals, i, n) }}
-                  className="w-full border border-slate-200 rounded-lg px-1.5 py-1 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-slate-200 px-1.5 py-1 text-center font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
                 />
               ))}
             </div>
           </div>
 
           <FieldInput label="US Confidence (fixed)" value={fixedConf} onChange={setFixedConf} min={15} max={999} />
-        </div>
+        </SurfaceCard>
 
         <RunButton onClick={handleRun} loading={mutation.isPending} />
       </aside>
 
       {/* Results */}
-      <div className="flex-1 min-w-0 space-y-4">
+      <div className="min-w-0 flex-1 space-y-4">
         {mutation.isPending ? (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <SurfaceCard>
             <SkeletonLoader lines={6} />
-          </div>
+          </SurfaceCard>
         ) : mutation.data ? (
           <>
             {/* Best / Worst callout */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {bestCase && (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-green-700 uppercase tracking-wider mb-1.5">★ Best Case</p>
-                  <p className="text-sm font-mono text-green-800">PKR {bestCase.pkr} · Oil ${bestCase.oil}</p>
-                  <p className="text-xl font-bold text-green-900 font-mono mt-1">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 shadow-sm">
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-800">Best case</p>
+                  <p className="font-mono text-sm text-emerald-900">PKR {bestCase.pkr} · Oil ${bestCase.oil}</p>
+                  <p className="mt-1 font-mono text-xl font-bold text-emerald-950">
                     ${mutation.data.best_scenario.predicted_m.toFixed(1)}M
                   </p>
                 </div>
               )}
               {worstCase && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-red-700 uppercase tracking-wider mb-1.5">✗ Worst Case</p>
-                  <p className="text-sm font-mono text-red-800">PKR {worstCase.pkr} · Oil ${worstCase.oil}</p>
-                  <p className="text-xl font-bold text-red-900 font-mono mt-1">
+                <div className="rounded-2xl border border-rose-200 bg-rose-50/90 p-4 shadow-sm">
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-rose-800">Worst case</p>
+                  <p className="font-mono text-sm text-rose-900">PKR {worstCase.pkr} · Oil ${worstCase.oil}</p>
+                  <p className="mt-1 font-mono text-xl font-bold text-rose-950">
                     ${mutation.data.worst_scenario.predicted_m.toFixed(1)}M
                   </p>
                 </div>
@@ -415,11 +402,11 @@ function MultiVariableTab() {
             </div>
 
             {/* Heatmap */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-              <h3 className="text-sm font-semibold text-slate-700 mb-1">
-                {mutation.data.commodity} — PKR × Brent Oil Heatmap
+            <SurfaceCard gradientTop>
+              <h3 className="font-display mb-1 text-sm font-semibold text-slate-800">
+                {mutation.data.commodity} — PKR × Brent oil heatmap
               </h3>
-              <p className="text-xs text-slate-400 mb-4">Forecast ($M) for each macro combination</p>
+              <p className="mb-4 text-xs text-slate-500">Forecast ($M) for each macro combination</p>
               <HeatmapGrid
                 matrix={normMatrix}
                 pkrValues={mutation.data.pkr_values}
@@ -427,10 +414,10 @@ function MultiVariableTab() {
                 bestCase={bestCase}
                 worstCase={worstCase}
               />
-            </div>
+            </SurfaceCard>
           </>
         ) : (
-          <EmptyChart message="Set PKR and oil grid values, then click Run Scenario" />
+          <EmptyChart message="Set PKR and oil grid values, then click Run scenario" />
         )}
       </div>
     </div>
@@ -517,22 +504,22 @@ function CompareTab() {
   return (
     <div className="space-y-6">
       {/* Shared controls bar */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+      <SurfaceCard gradientTop>
         <div className="flex flex-wrap items-end gap-6">
           <div className="w-52">
             <CommoditySelector value={hs} onChange={setHs} />
           </div>
 
           <div>
-            <p className="text-xs font-medium text-slate-600 mb-1.5">Sweep Variable</p>
+            <p className="mb-1.5 text-xs font-medium text-slate-600">Sweep variable</p>
             <div className="flex gap-4">
               {Object.entries(VARIABLE_META).map(([key]) => (
-                <label key={key} className="flex items-center gap-1.5 cursor-pointer">
+                <label key={key} className="flex cursor-pointer items-center gap-1.5">
                   <input
                     type="radio" name="cmp-var" value={key}
                     checked={variable === key}
                     onChange={() => handleVariableChange(key)}
-                    className="accent-blue-600"
+                    className="accent-indigo-600"
                   />
                   <span className="text-sm text-slate-700">{key.toUpperCase()}</span>
                 </label>
@@ -543,10 +530,10 @@ function CompareTab() {
           <div className="flex gap-2">
             {[['Min', rangeMin, setRangeMin], ['Max', rangeMax, setRangeMax]].map(([lbl, val, set]) => (
               <div key={lbl}>
-                <p className="text-xs text-slate-400 mb-0.5">{lbl}</p>
+                <p className="mb-0.5 text-xs text-slate-400">{lbl}</p>
                 <input type="number" value={val}
                   onChange={(e) => { const n = parseFloat(e.target.value); if (!isNaN(n)) set(n) }}
-                  className="w-20 border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-20 rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
                 />
               </div>
             ))}
@@ -557,17 +544,18 @@ function CompareTab() {
           </div>
 
           <button
+            type="button"
             onClick={handleRun}
             disabled={isLoading}
             className={clsx(
-              'bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors',
-              isLoading && 'opacity-60 cursor-not-allowed'
+              'rounded-xl bg-gradient-to-r from-indigo-600 to-violet-700 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all hover:from-indigo-500 hover:to-violet-600',
+              isLoading && 'cursor-not-allowed opacity-60'
             )}
           >
-            {isLoading ? 'Running…' : 'Run Comparison'}
+            {isLoading ? 'Running…' : 'Run comparison'}
           </button>
         </div>
-      </div>
+      </SurfaceCard>
 
       {/* Scenario A / B fixed-values panels */}
       <div className="grid grid-cols-2 gap-6">
@@ -593,11 +581,11 @@ function CompareTab() {
 
       {/* Overlay chart */}
       {isLoading ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <SurfaceCard>
           <SkeletonLoader lines={6} />
-        </div>
+        </SurfaceCard>
       ) : mutA.data && mutB.data ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <SurfaceCard>
           <ScenarioChart
             points={mutA.data.points}
             variable={variable}
@@ -605,9 +593,9 @@ function CompareTab() {
             comparePoints={mutB.data.points}
             annotation={`A: ${mutA.data.annotation}   ·   B: ${mutB.data.annotation}`}
           />
-        </div>
+        </SurfaceCard>
       ) : (
-        <EmptyChart message="Configure Scenario A and B, then click Run Comparison" />
+        <EmptyChart message="Configure scenario A and B, then click Run comparison" />
       )}
 
       {/* Delta table */}
@@ -628,18 +616,18 @@ export default function ScenarioSimulator() {
   const [activeTab, setActiveTab] = useState('single')
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Scenario Simulator</h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Explore how macro variables affect Pakistan export forecasts
-        </p>
-      </div>
+    <div className="pb-8">
+      <PageHeader
+        eyebrow="What-if analysis"
+        title="Scenario simulator"
+        description="Stress-test PKR, oil, and US confidence—single-variable sweeps, PKR × oil grids, or side-by-side scenario comparison."
+        icon={Sliders}
+      />
 
-      <TabBar active={activeTab} onChange={setActiveTab} />
+      <PageTabs tabs={SCENARIO_TABS} active={activeTab} onChange={setActiveTab} />
 
-      {activeTab === 'single'  && <SingleVariableTab />}
-      {activeTab === 'multi'   && <MultiVariableTab />}
+      {activeTab === 'single' && <SingleVariableTab />}
+      {activeTab === 'multi' && <MultiVariableTab />}
       {activeTab === 'compare' && <CompareTab />}
     </div>
   )

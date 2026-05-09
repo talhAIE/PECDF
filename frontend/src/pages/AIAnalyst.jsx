@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { Bot, BarChart2, FileText, Trash2, RefreshCw } from 'lucide-react'
-import ChatWindow    from '../components/chat/ChatWindow'
+import ChatWindow from '../components/chat/ChatWindow'
 import { useAgentChat } from '../hooks/useAgentChat'
 import { useMacroStore } from '../store/macroStore'
 import { COMMODITY_META } from '../config/commodities'
+import PageHeader from '../components/ui/PageHeader'
+import SurfaceCard from '../components/ui/SurfaceCard'
 
 const COMMODITIES = Object.entries(COMMODITY_META).map(([hs, m]) => ({ hs, name: m.name }))
 
@@ -12,29 +14,29 @@ function MacroDisplay() {
   const brent_oil     = useMacroStore(s => s.brent_oil)
   const us_confidence = useMacroStore(s => s.us_confidence)
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Macro Inputs</p>
+    <SurfaceCard className="space-y-3" gradientTop>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Active macro inputs</p>
       <div className="space-y-2">
         {[
           { label: 'USD/PKR', value: usd_pkr.toFixed(1) },
           { label: 'Brent Oil (USD)', value: brent_oil.toFixed(1) },
           { label: 'US Consumer Conf.', value: us_confidence.toFixed(1) },
         ].map(({ label, value }) => (
-          <div key={label} className="flex justify-between items-center">
-            <span className="text-xs text-slate-500">{label}</span>
-            <span className="text-xs font-semibold text-slate-800 font-mono">{value}</span>
+          <div key={label} className="flex items-center justify-between">
+            <span className="text-xs text-slate-600">{label}</span>
+            <span className="font-mono text-xs font-semibold tabular-nums text-slate-900">{value}</span>
           </div>
         ))}
       </div>
-      <p className="text-[11px] text-slate-400">Edit macro values in the top bar.</p>
-    </div>
+      <p className="text-[11px] text-slate-400">Edit values in the toolbar above.</p>
+    </SurfaceCard>
   )
 }
 
 function SessionInfo({ sessionId, messageCount, onClear }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Session</p>
+    <SurfaceCard className="space-y-3">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Session</p>
       <div className="space-y-1.5 text-xs text-slate-600">
         <div className="flex justify-between">
           <span>Status</span>
@@ -49,50 +51,54 @@ function SessionInfo({ sessionId, messageCount, onClear }) {
         {sessionId && (
           <div className="flex justify-between">
             <span>ID</span>
-            <span className="font-mono text-slate-400 truncate max-w-[120px]" title={sessionId}>
+            <span className="max-w-[120px] truncate font-mono text-slate-400" title={sessionId}>
               {sessionId.slice(0, 8)}…
             </span>
           </div>
         )}
       </div>
       <button
+        type="button"
         onClick={onClear}
-        className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-colors"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-2 text-xs font-medium text-slate-600 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
       >
         <Trash2 size={12} />
         Clear conversation
       </button>
-    </div>
+    </SurfaceCard>
   )
 }
 
 function QuickLinks() {
   const navigate = useNavigate()
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Quick Navigation</p>
+    <SurfaceCard className="space-y-1">
+      <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Quick links</p>
       <button
+        type="button"
         onClick={() => navigate('/forecast')}
-        className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs text-slate-600 hover:bg-slate-50 transition-colors"
+        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-indigo-50 hover:text-indigo-800"
       >
-        <BarChart2 size={14} className="text-blue-500" />
-        Forecast Center
+        <BarChart2 size={14} className="text-indigo-600" />
+        Forecast center
       </button>
       <button
+        type="button"
         onClick={() => navigate('/scenario')}
-        className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs text-slate-600 hover:bg-slate-50 transition-colors"
+        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-violet-50 hover:text-violet-900"
       >
-        <RefreshCw size={14} className="text-purple-500" />
-        Scenario Simulator
+        <RefreshCw size={14} className="text-violet-600" />
+        Scenario simulator
       </button>
       <button
+        type="button"
         onClick={() => navigate('/report')}
-        className="w-full flex items-center gap-2 py-2 px-3 rounded-lg text-xs text-slate-600 hover:bg-slate-50 transition-colors"
+        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-emerald-50 hover:text-emerald-900"
       >
-        <FileText size={14} className="text-emerald-500" />
-        Generate Report
+        <FileText size={14} className="text-emerald-600" />
+        Generate report
       </button>
-    </div>
+    </SurfaceCard>
   )
 }
 
@@ -100,24 +106,19 @@ export default function AIAnalyst() {
   const { messages, isPending, isRestorable, sessionId, send, restore, clear, dismiss } = useAgentChat()
 
   return (
-    <div className="flex flex-col gap-4 h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-8rem)] flex-col gap-6">
 
-      {/* header */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center">
-          <Bot size={20} className="text-blue-600" />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold text-slate-800">AI Export Analyst</h1>
-          <p className="text-xs text-slate-500">Powered by Claude — asks only what the data knows</p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="AI assistant"
+        title="Export analyst"
+        description="Ask questions about forecasts, commodities, and macro drivers. The assistant uses your session macro inputs and live API tools."
+        icon={Bot}
+      />
 
-      {/* body */}
-      <div className="flex flex-1 gap-4 min-h-0">
+      <div className="flex min-h-0 flex-1 gap-5">
 
         {/* chat — takes remaining width */}
-        <div className="flex-1 min-w-0 min-h-0">
+        <div className="min-h-0 min-w-0 flex-1">
           <ChatWindow
             messages={messages}
             isPending={isPending}
@@ -129,7 +130,7 @@ export default function AIAnalyst() {
         </div>
 
         {/* sidebar */}
-        <div className="w-56 shrink-0 space-y-3 overflow-y-auto">
+        <div className="w-full shrink-0 space-y-3 overflow-y-auto sm:w-56">
           <MacroDisplay />
           <SessionInfo
             sessionId={sessionId}
@@ -138,22 +139,22 @@ export default function AIAnalyst() {
           />
           <QuickLinks />
 
-          {/* commodity quick-links */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Commodities</p>
-            <div className="space-y-0.5">
+          <SurfaceCard className="space-y-2">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Commodities</p>
+            <div className="max-h-48 space-y-0.5 overflow-y-auto pr-1">
               {COMMODITIES.map(c => (
                 <button
                   key={c.hs}
+                  type="button"
                   onClick={() => send(`Tell me about the forecast for ${c.name} (HS ${c.hs}).`)}
-                  className="w-full text-left px-2 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                  className="w-full rounded-lg px-2 py-1.5 text-left text-xs text-slate-600 transition-colors hover:bg-indigo-50 hover:text-indigo-800"
                 >
                   {c.name}
-                  <span className="ml-1 text-slate-400 font-mono">{c.hs}</span>
+                  <span className="ml-1 font-mono text-slate-400">{c.hs}</span>
                 </button>
               ))}
             </div>
-          </div>
+          </SurfaceCard>
         </div>
       </div>
     </div>

@@ -14,7 +14,7 @@ export default function ChatWindow({ messages, isPending, isRestorable, onSend, 
   const empty = messages.length === 0
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50 to-white shadow-[0_8px_32px_-20px_rgba(79,70,229,0.15)] ring-1 ring-indigo-100/60">
 
       {/* restore banner */}
       {isRestorable && (

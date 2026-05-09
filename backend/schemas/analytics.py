@@ -75,3 +75,23 @@ class HistoricalResponse(BaseModel):
     commodity: str
     months_requested: int
     data: list[HistoricalPoint]
+
+
+# ─── Model fit (historic one-step preds = same code path as /forecast model) ─
+
+class ModelFitPoint(BaseModel):
+    month: int
+    actual_m: float
+    predicted_m: float
+
+
+class ModelFitResponse(BaseModel):
+    hs_code: str
+    commodity: str
+    start_yyyymm: int
+    end_yyyymm: int
+    points: list[ModelFitPoint]
+    description: str = (
+        "Per-month predictions use macro drivers from that row of the master dataset "
+        "and loader.model (champion pickle)."
+    )

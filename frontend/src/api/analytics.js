@@ -15,6 +15,10 @@ export const fetchCommodityMomentum = (hs_code) =>
 export const fetchHistorical = (hs_code, months = 24) =>
   client.get(`/historical/${hs_code}`, { params: { months } })
 
+/** Actual vs predicted on test window — champion model + historic macros per month */
+export const fetchModelFitSeries = (hs_code, start_yyyymm, end_yyyymm) =>
+  client.get(`/model-fit/${hs_code}`, { params: { start_yyyymm, end_yyyymm } })
+
 export const fetchCurrencySensitivity = ({ target_yyyymm, pkr_min = 260, pkr_max = 330 }) =>
   client.get('/sensitivity/currency', { params: { target_yyyymm, pkr_min, pkr_max } })
 

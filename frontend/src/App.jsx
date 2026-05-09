@@ -10,6 +10,7 @@ import ScenarioSimulator  from './pages/ScenarioSimulator'
 import CommodityExplorer  from './pages/CommodityExplorer'
 import AIAnalyst          from './pages/AIAnalyst'
 import ReportGenerator    from './pages/ReportGenerator'
+import LandingPage        from './pages/LandingPage'
 
 
 export default function App() {
@@ -17,13 +18,14 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
+        <Route path="/"         element={<LandingPage />} />
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
         {/* Protected routes */}
         <Route element={<AuthGuard />}>
           <Route element={<AppShell />}>
-            <Route path="/"              element={<Dashboard />} />
+            <Route path="/dashboard"     element={<Dashboard />} />
             <Route path="/forecast"      element={<ForecastCenter />} />
             <Route path="/scenario"      element={<ScenarioSimulator />} />
             <Route path="/commodity/:hs" element={<CommodityExplorer />} />

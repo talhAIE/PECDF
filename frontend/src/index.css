@@ -7,15 +7,28 @@
     --color-flat: #94A3B8;
     --color-forecast: #DC2626;
     --color-historical: #1A252F;
+    --pecdf-bg-base: #f0f2f7;
+    --pecdf-bg-deep: #e2e8f0;
   }
 
   body {
-    font-family: 'Inter', sans-serif;
-    background-color: #F8FAFC;
-    color: #0F172A;
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: var(--pecdf-bg-base);
+    background-image:
+      radial-gradient(ellipse 120% 80% at 50% -20%, rgba(99, 102, 241, 0.09), transparent 50%),
+      radial-gradient(ellipse 80% 50% at 100% 0%, rgba(14, 165, 233, 0.06), transparent 45%);
+    color: #0f172a;
     margin: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  .font-display {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  }
+
+  .tabular-fig {
+    font-variant-numeric: tabular-nums lining-nums;
   }
 
   #root {
