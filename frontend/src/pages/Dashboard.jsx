@@ -74,7 +74,9 @@ export default function Dashboard() {
   const {
     data: portfolioData,
     isLoading: pfLoading,
+    isFetching: pfFetching,
     isError: pfError,
+    error: pfErrorDetail,
     refetch: pfRefetch,
   } = usePortfolioForecast()
 
@@ -164,10 +166,24 @@ export default function Dashboard() {
           />
         )}
 
+        {!momError && pfError && (
+          <ErrorState
+            message={
+              String(pfErrorDetail?.message ?? 'Could not load portfolio forecast.')
+              + ' If you just changed Market Inputs, ensure USD/PKR, Brent, and US Confidence are within valid ranges (API may reject out-of-range macros).'
+            }
+            onRetry={pfRefetch}
+            className="mb-4"
+          />
+        )}
+
         {!momError && (
           <div className="flex gap-6">
             {/* 10-commodity grid */}
             <div className="flex-1 min-w-0">
+              {!momLoading && pfFetching && (
+                <p className="text-xs text-blue-600 mb-2">Updating forecasts for new macro inputs…</p>
+              )}
               {momLoading ? (
                 <div className="grid grid-cols-5 gap-4">
                   {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}

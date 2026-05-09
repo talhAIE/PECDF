@@ -17,6 +17,15 @@ async def lifespan(app: FastAPI):
     # ── Startup ──────────────────────────
     Base.metadata.create_all(bind=engine)   # create DB tables if not exist
     load_artifacts()                         # load model + master_df into memory
+    try:
+        from llm_runtime import resolve_agent_llm_provider
+
+        prov = resolve_agent_llm_provider()
+        print(f"[APP] Agent LLM provider: {prov} (edit .env + restart to change)")
+    except Exception as e:
+        print(f"[APP] Agent LLM not configured: {e}")
+    fred_on = bool((getattr(settings, "fred_api_key", "") or "").strip())
+    print(f"[APP] FRED live macro (US confidence): {'enabled' if fred_on else 'disabled (set FRED_API_KEY)'}")
     print(f"[APP] PECDF Backend v{settings.app_version} started.")
     print(f"[APP] Docs available at http://localhost:8000/docs")
     yield

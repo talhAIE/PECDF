@@ -2,9 +2,8 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from groq import Groq
-from config import settings
 from ml import loader
+from llm_runtime import chat_completion_text
 
 
 def generate_report(
@@ -19,10 +18,9 @@ def generate_report(
     momentum_data: list[dict]
 ) -> str:
     """
-    Call Groq (Llama 3.3 70B) to generate a structured export outlook report.
+    Generate export outlook report via configured LLM (Groq or OpenAI).
     All data is pre-fetched by the router before calling this function.
     """
-    client = Groq(api_key=settings.groq_api_key)
 
     tone_instruction = (
         "Write in plain business English. No ML jargon. "
@@ -82,9 +80,4 @@ Write the report with these exact sections:
 
 Keep the tone professional and concise. Use USD millions (e.g. $42.5M) for all values."""
 
-    response = client.chat.completions.create(
-        model=settings.agent_model,
-        max_tokens=settings.agent_max_tokens,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content
+    return chat_completion_text(prompt, max_tokens=None)

@@ -66,10 +66,16 @@ export default function ScenarioChart({
 
   const yFormatter = (v) => `$${Number(v).toFixed(1)}M`
 
+  const compare = Boolean(comparePoints)
+  /** Compare mode puts legend at top so X-axis title + Scenario A/B never collide (Recharts default bottom legend overlaps insideBottom axis label). */
+  const margins = compare
+    ? { top: 44, right: 24, left: 8, bottom: 40 }
+    : { top: 12, right: 24, left: 8, bottom: 28 }
+
   return (
     <div className={className}>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data} margin={{ top: 12, right: 24, left: 8, bottom: 28 }}>
+      <ResponsiveContainer width="100%" height={compare ? 320 : 300}>
+        <LineChart data={data} margin={margins}>
           <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
 
           <XAxis
@@ -87,7 +93,7 @@ export default function ScenarioChart({
             label={{
               value: VARIABLE_LABELS[variable] ?? variable,
               position: 'insideBottom',
-              offset: -16,
+              offset: compare ? -4 : -16,
               fontSize: 11,
               fill: '#94A3B8',
             }}
@@ -106,7 +112,10 @@ export default function ScenarioChart({
 
           {comparePoints && (
             <Legend
-              wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+              verticalAlign="top"
+              align="center"
+              layout="horizontal"
+              wrapperStyle={{ fontSize: 11, paddingTop: 4, paddingBottom: 2 }}
               formatter={(value) => value === 'a' ? 'Scenario A' : 'Scenario B'}
             />
           )}

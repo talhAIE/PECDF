@@ -1,35 +1,143 @@
-import { useState } from 'react'
-import { RotateCcw, RefreshCw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
+import { RotateCcw, RefreshCw, ChevronUp, ChevronDown } from 'lucide-react'
 import { useMacroStore } from '../../store/macroStore'
 import { useModelInfo, fmtMonthYear } from '../../hooks/useModelInfo'
 import { fetchLiveMacro } from '../../api/system'
 
+// Keep min/max aligned with backend `MacroInputs` (schemas/common.py) so forecasts don’t 422.
 const FIELDS = [
   {
     key: 'usd_pkr',
     label: 'USD/PKR',
     unit: 'Rate',
-    min: 200,
-    max: 500,
+    min: 120,
+    max: 560,
     step: 0.5,
   },
   {
     key: 'brent_oil',
     label: 'Brent Oil',
     unit: '$/barrel',
-    min: 20,
-    max: 200,
+    min: 10,
+    max: 350,
     step: 0.5,
   },
   {
     key: 'us_confidence',
     label: 'US Confidence',
     unit: 'Index',
-    min: 50,
-    max: 150,
+    min: 15,
+    max: 999,
     step: 0.5,
   },
 ]
+
+function clampStep(n, min, max, step) {
+  if (!Number.isFinite(n)) return Math.min(max, Math.max(min, min))
+  const stepStr = String(step)
+  const decimals = stepStr.includes('.') ? stepStr.split('.')[1].length : 0
+  const snapped = Math.round(n / step) * step
+  const tidy = Number(snapped.toFixed(decimals))
+  return Math.min(max, Math.max(min, tidy))
+}
+
+/**
+ * Type freely (including empty / partial decimals); commit on blur.
+ * Up/down always work and match backend min/max/step.
+ */
+function MacroSpinField({ label, unit, value, min, max, step, onCommit }) {
+  const [draft, setDraft] = useState(undefined)
+
+  useEffect(() => {
+    setDraft(undefined)
+  }, [value])
+
+  const shown = draft !== undefined ? draft : String(value)
+
+  const applyNumber = (n) => {
+    const c = clampStep(n, min, max, step)
+    onCommit(c)
+    setDraft(undefined)
+  }
+
+  const bump = (dir) => {
+    const base = draft !== undefined ? parseFloat(String(draft)) : value
+    const n = clampStep(base + dir * step, min, max, step)
+    onCommit(n)
+    setDraft(undefined)
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="text-right shrink-0">
+        <p className="text-xs font-medium text-slate-600 leading-none">{label}</p>
+        <p className="text-xs text-slate-400 leading-none mt-0.5">{unit}</p>
+      </div>
+
+      <div className="flex items-stretch rounded-lg border border-slate-200 bg-white shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/30">
+        <input
+          type="number"
+          inputMode="decimal"
+          aria-label={`${label} ${unit}`}
+          value={shown}
+          min={min}
+          max={max}
+          step={step}
+          onChange={(e) => {
+            const raw = e.target.value
+            setDraft(raw)
+            const n = parseFloat(String(raw).replace(',', '.'))
+            if (raw.trim() === '' || Number.isNaN(n)) return
+            // Only push to store when in range so partial typing (e.g. "2" before "278") is not clamped to min.
+            if (n >= min && n <= max) {
+              onCommit(clampStep(n, min, max, step))
+            }
+          }}
+          onBlur={() => {
+            if (draft === undefined) return
+            const trimmed = draft.trim().replace(',', '.')
+            if (trimmed === '' || trimmed === '-') {
+              setDraft(undefined)
+              return
+            }
+            const n = parseFloat(trimmed)
+            applyNumber(Number.isNaN(n) ? value : n)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              e.currentTarget.blur()
+            }
+          }}
+          className={
+            'w-[6.75rem] min-w-0 border-0 bg-transparent px-2 py-1.5 text-sm font-mono text-slate-900 '
+            + 'focus:outline-none [appearance:textfield] '
+            + '[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+          }
+        />
+        <div className="flex flex-col border-l border-slate-200 divide-y divide-slate-200 shrink-0">
+          <button
+            type="button"
+            aria-label={`Increase ${label}`}
+            onClick={() => bump(1)}
+            className="flex items-center justify-center px-1.5 py-0.5 text-slate-500 hover:bg-slate-50 hover:text-slate-800 active:bg-slate-100"
+          >
+            <ChevronUp className="w-4 h-4" strokeWidth={2.5} />
+          </button>
+          <button
+            type="button"
+            aria-label={`Decrease ${label}`}
+            onClick={() => bump(-1)}
+            className="flex items-center justify-center px-1.5 py-0.5 text-slate-500 hover:bg-slate-50 hover:text-slate-800 active:bg-slate-100"
+          >
+            <ChevronDown className="w-4 h-4" strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function MacroBar() {
   const { usd_pkr, brent_oil, us_confidence, setMacro, resetMacro } = useMacroStore()
@@ -49,8 +157,24 @@ export default function MacroBar() {
       if (live.brent_oil != null)      { setMacro('brent_oil',      live.brent_oil);      updated++ }
       if (live.us_confidence != null)  { setMacro('us_confidence',  live.us_confidence);  updated++ }
       setSyncStatus(updated === 3 ? 'ok' : updated > 0 ? 'partial' : 'error')
+
+      const ok = live.fetched_ok || {}
+      const parts = [
+        ok.usd_pkr && 'USD/PKR (Yahoo)',
+        ok.brent_oil && 'Brent (Yahoo)',
+        ok.us_confidence && 'US confidence (FRED)',
+      ].filter(Boolean)
+      const note = live.us_confidence_note || ''
+      if (updated === 0) {
+        toast.error('Live sync failed — check network and API keys (FRED for confidence).')
+      } else {
+        toast.success([`Updated: ${parts.join(', ')}.`, note].filter(Boolean).join(' '), {
+          duration: 5500,
+        })
+      }
     } catch {
       setSyncStatus('error')
+      toast.error('Could not reach /macro/live — is the backend running?')
     } finally {
       setSyncing(false)
       setTimeout(() => setSyncStatus(null), 4000)
@@ -82,26 +206,18 @@ export default function MacroBar() {
       </span>
 
       {/* Inputs */}
-      <div className="flex items-center gap-5 flex-1">
+      <div className="flex items-center gap-5 flex-1 flex-wrap">
         {FIELDS.map(({ key, label, unit, min, max, step }) => (
-          <div key={key} className="flex items-center gap-2">
-            <div className="text-right shrink-0">
-              <p className="text-xs font-medium text-slate-600 leading-none">{label}</p>
-              <p className="text-xs text-slate-400 leading-none mt-0.5">{unit}</p>
-            </div>
-            <input
-              type="number"
-              value={values[key]}
-              min={min}
-              max={max}
-              step={step}
-              onChange={(e) => {
-                const v = parseFloat(e.target.value)
-                if (!isNaN(v)) setMacro(key, v)
-              }}
-              className="w-20 border border-slate-200 rounded-md px-2 py-1 text-sm font-mono text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+          <MacroSpinField
+            key={key}
+            label={label}
+            unit={unit}
+            value={values[key]}
+            min={min}
+            max={max}
+            step={step}
+            onCommit={(n) => setMacro(key, n)}
+          />
         ))}
       </div>
 

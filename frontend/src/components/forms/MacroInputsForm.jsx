@@ -1,9 +1,9 @@
 import { clsx } from 'clsx'
 
 const FIELDS = [
-  { key: 'usd_pkr',       label: 'USD/PKR',         unit: 'Rate',      min: 200, max: 500, step: 0.5 },
-  { key: 'brent_oil',     label: 'Brent Oil',        unit: '$/barrel',  min: 20,  max: 200, step: 0.5 },
-  { key: 'us_confidence', label: 'US Confidence',    unit: 'Index',     min: 50,  max: 150, step: 0.5 },
+  { key: 'usd_pkr',       label: 'USD/PKR',         unit: 'Rate',      min: 120, max: 560, step: 0.5 },
+  { key: 'brent_oil',     label: 'Brent Oil',       unit: '$/barrel',  min: 10, max: 350, step: 0.5 },
+  { key: 'us_confidence', label: 'US Confidence',   unit: 'Index',     min: 15, max: 999, step: 0.5 },
 ]
 
 export default function MacroInputsForm({ values, onChange, label = 'Macro Assumptions', className = '' }) {

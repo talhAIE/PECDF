@@ -1,4 +1,7 @@
-from pydantic_settings import BaseSettings
+from typing import Literal
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -17,9 +20,13 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_hours: int = 24
 
-    # Groq AI
-    groq_api_key: str
-    agent_model: str = "llama-3.3-70b-versatile"
+    # LLM — set at least one of GROQ_API_KEY or OPENAI_API_KEY for agent + reports
+    groq_api_key: str = Field(default="", description="Groq API key (console.groq.com)")
+    openai_api_key: str = Field(default="", description="OpenAI API key")
+    # auto: sole key chooses provider; if both keys are set -> OpenAI (set groq to force Groq)
+    agent_llm_provider: Literal["auto", "groq", "openai"] = "auto"
+    agent_model: str = "llama-3.3-70b-versatile"   # Groq model id
+    openai_model: str = "gpt-4o-mini"              # OpenAI model id
     agent_max_tokens: int = 4096
     agent_memory_window: int = 10
     session_ttl_hours: int = 24
@@ -28,8 +35,7 @@ class Settings(BaseSettings):
     # Used for real-time US Consumer Confidence (UMCSENT series)
     fred_api_key: str = ""
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()

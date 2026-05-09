@@ -1,15 +1,10 @@
 from langgraph.prebuilt import create_react_agent
-from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage
 from agent.tools import get_tools
 from agent.prompts import build_system_prompt
 from agent.memory import get_checkpointer, register_session, clear_memory
-import sys
-import os
+from llm_runtime import get_langchain_chat_model
 import logging
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +35,7 @@ def get_or_create_agent(
     if session_id in _agents and _agent_keys.get(session_id) == key:
         return _agents[session_id]
 
-    llm = ChatGroq(
-        model=settings.agent_model,
-        api_key=settings.groq_api_key,
-        max_tokens=settings.agent_max_tokens,
-        temperature=0.2,
-    )
+    llm = get_langchain_chat_model()
 
     tools = get_tools(bearer_token, macro_pkr, macro_oil, macro_conf)
     system_prompt = build_system_prompt(macro_pkr, macro_oil, macro_conf)
@@ -102,7 +92,7 @@ def invoke_agent(session_id: str, user_message: str) -> tuple[str, list[str]]:
 
     except Exception as e:
         err_str = str(e)
-        logger.error("Agent invoke error for session %s: %s", session_id, err_str)
+        logger.exception("Agent invoke error for session %s: %s", session_id, err_str)
 
         # Evict the agent so the next request creates a fresh one
         _agents.pop(session_id, None)
@@ -115,7 +105,32 @@ def invoke_agent(session_id: str, user_message: str) -> tuple[str, list[str]]:
                 [],
             )
 
-        if "rate_limit" in err_str.lower() or "429" in err_str:
+        def _looks_like_rate_limit(exc: BaseException, msg: str) -> bool:
+            """Avoid false positives — substring \"429\" alone can appear in unrelated token counts."""
+            m = msg.lower()
+            try:
+                from openai import RateLimitError
+
+                if isinstance(exc, RateLimitError):
+                    return True
+            except ImportError:
+                pass
+            if type(exc).__name__ == "RateLimitError":
+                return True
+            if "ratelimit" in m.replace(" ", "") or "rate_limit" in m or "too many requests" in m:
+                return True
+            if " tpm" in m or " tpm," in m or "requests per minute" in m:
+                return True
+            if (
+                "status_code=429" in m
+                or "status code: 429" in m
+                or "429 too many requests" in m
+                or "response_code=429" in m
+            ):
+                return True
+            return False
+
+        if _looks_like_rate_limit(e, err_str):
             return (
                 "The AI service is currently rate-limited. "
                 "Please wait a moment and try again.",
@@ -126,6 +141,19 @@ def invoke_agent(session_id: str, user_message: str) -> tuple[str, list[str]]:
             return (
                 "Could not reach the AI service. "
                 "Please check your connection and try again.",
+                [],
+            )
+
+        el = err_str.lower()
+        if (
+            "invalid_api_key" in el
+            or "incorrect api key" in el
+            or "401" in err_str
+            or "authentication" in el
+        ):
+            return (
+                "The AI API rejected the request (invalid key, permissions, or billing). "
+                "Check OPENAI_API_KEY / GROQ_API_KEY and AGENT_LLM_PROVIDER in backend/.env, then restart the server.",
                 [],
             )
 

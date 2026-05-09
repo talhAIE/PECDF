@@ -232,9 +232,9 @@ function SingleVariableTab() {
         {/* Fixed values */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-2">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Fixed Values</p>
-          {variable !== 'pkr'  && <FieldInput label="USD/PKR Rate"  value={fixedPkr}  onChange={setFixedPkr}  min={200} max={500} />}
-          {variable !== 'oil'  && <FieldInput label="Brent Oil ($)" value={fixedOil}  onChange={setFixedOil}  min={20}  max={200} />}
-          {variable !== 'conf' && <FieldInput label="US Confidence" value={fixedConf} onChange={setFixedConf} min={50}  max={150} />}
+          {variable !== 'pkr'  && <FieldInput label="USD/PKR Rate"  value={fixedPkr}  onChange={setFixedPkr}  min={120} max={560} />}
+          {variable !== 'oil'  && <FieldInput label="Brent Oil ($)" value={fixedOil}  onChange={setFixedOil}  min={10} max={350} />}
+          {variable !== 'conf' && <FieldInput label="US Confidence" value={fixedConf} onChange={setFixedConf} min={15} max={999} />}
         </div>
 
         <RunButton onClick={handleRun} loading={mutation.isPending} />
@@ -378,7 +378,7 @@ function MultiVariableTab() {
             </div>
           </div>
 
-          <FieldInput label="US Confidence (fixed)" value={fixedConf} onChange={setFixedConf} min={50} max={150} />
+          <FieldInput label="US Confidence (fixed)" value={fixedConf} onChange={setFixedConf} min={15} max={999} />
         </div>
 
         <RunButton onClick={handleRun} loading={mutation.isPending} />
@@ -580,9 +580,9 @@ function CompareTab() {
           <div key={label} className={clsx('rounded-xl border p-5', bgCls)}>
             <h3 className={clsx('text-sm font-semibold mb-3', headerCls)}>{label}</h3>
             <div className="space-y-2">
-              {variable !== 'pkr'  && <FieldInput label="USD/PKR Rate"  value={pkr}  onChange={setPkr}  min={200} max={500} />}
-              {variable !== 'oil'  && <FieldInput label="Brent Oil ($)" value={oil}  onChange={setOil}  min={20}  max={200} />}
-              {variable !== 'conf' && <FieldInput label="US Confidence" value={conf} onChange={setConf} min={50}  max={150} />}
+              {variable !== 'pkr'  && <FieldInput label="USD/PKR Rate"  value={pkr}  onChange={setPkr}  min={120} max={560} />}
+              {variable !== 'oil'  && <FieldInput label="Brent Oil ($)" value={oil}  onChange={setOil}  min={10} max={350} />}
+              {variable !== 'conf' && <FieldInput label="US Confidence" value={conf} onChange={setConf} min={15} max={999} />}
               <p className="text-xs text-slate-400 pt-1 font-mono">
                 Sweeping: <span className="font-medium text-slate-500">{vmeta?.label}</span>
               </p>

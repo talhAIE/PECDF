@@ -1,8 +1,11 @@
+import logging
+
 import httpx
 from fastapi import APIRouter
 from config import settings
 
 router = APIRouter(prefix="/macro", tags=["Macro"])
+logger = logging.getLogger(__name__)
 
 YAHOO_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -23,9 +26,9 @@ async def _yahoo_price(symbol: str) -> float | None:
         return None
 
 
-async def _fred_latest(series_id: str) -> float | None:
-    api_key = getattr(settings, "fred_api_key", "")
-    if not api_key:
+async def _fred_latest(series_id: str, limit: int = 6) -> float | None:
+    api_key = getattr(settings, "fred_api_key", "") or ""
+    if not api_key.strip():
         return None
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
@@ -33,17 +36,24 @@ async def _fred_latest(series_id: str) -> float | None:
                 "https://api.stlouisfed.org/fred/series/observations",
                 params={
                     "series_id": series_id,
-                    "api_key": api_key,
+                    "api_key": api_key.strip(),
                     "file_type": "json",
                     "sort_order": "desc",
-                    "limit": 1,
+                    "limit": limit,
                 },
             )
             r.raise_for_status()
-            obs = r.json()["observations"][0]
-            val = obs.get("value", ".")
-            return round(float(val), 1) if val != "." else None
-    except Exception:
+            body = r.json()
+            for obs in body.get("observations") or []:
+                val = obs.get("value", ".")
+                if val not in (None, "", "."):
+                    try:
+                        return round(float(val), 1)
+                    except (TypeError, ValueError):
+                        continue
+            return None
+    except Exception as ex:
+        logger.warning("FRED observation fetch failed for %s: %s", series_id, ex)
         return None
 
 
@@ -62,6 +72,7 @@ async def get_live_macro():
         _yahoo_price("BZ=F"),
         _fred_latest("UMCSENT"),
     )
+    fred_on = bool((getattr(settings, "fred_api_key", "") or "").strip())
     return {
         "usd_pkr":       usd_pkr,
         "brent_oil":     brent_oil,
@@ -71,4 +82,20 @@ async def get_live_macro():
             "brent_oil":     "Yahoo Finance — BZ=F (Brent Crude Futures)",
             "us_confidence": "FRED — UMCSENT (U. Michigan Consumer Sentiment)",
         },
+        # Lets the UI confirm what actually updated (vs stale manual values)
+        "fetched_ok": {
+            "usd_pkr":       usd_pkr is not None,
+            "brent_oil":     brent_oil is not None,
+            "us_confidence": us_confidence is not None,
+        },
+        "fred_api_configured": fred_on,
+        "us_confidence_note": (
+            "Live from FRED UMCSENT (latest published month)."
+            if us_confidence is not None
+            else (
+                "No FRED_API_KEY in .env — US confidence is not fetched live."
+                if not fred_on
+                else "FRED returned no numeric observation — check key or try again later."
+            )
+        ),
     }
