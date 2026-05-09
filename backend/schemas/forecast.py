@@ -14,7 +14,7 @@ class SingleForecastRequest(BaseModel):
 class MultiHorizonForecastRequest(BaseModel):
     hs_code: str
     start_yyyymm: int
-    n_months: int = Field(3, ge=1, le=12)
+    n_months: int = Field(3, ge=1, le=24)
     macro: MacroInputs = MacroInputs()
 
 

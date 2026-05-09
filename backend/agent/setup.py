@@ -6,13 +6,22 @@ from agent.prompts import build_system_prompt
 from agent.memory import get_checkpointer, register_session, clear_memory
 import sys
 import os
+import logging
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import settings
 
+logger = logging.getLogger(__name__)
+
 # Cache compiled graphs per session so we don't rebuild on every request
 _agents: dict[str, object] = {}
-_agent_tokens: dict[str, str] = {}   # session_id -> bearer_token (for tool auth)
+_agent_keys: dict[str, tuple] = {}   # session_id -> (bearer_token, pkr, oil, conf)
+
+
+def _cache_key(
+    bearer_token: str, macro_pkr: float, macro_oil: float, macro_conf: float
+) -> tuple:
+    return (bearer_token, macro_pkr, macro_oil, macro_conf)
 
 
 def get_or_create_agent(
@@ -24,9 +33,11 @@ def get_or_create_agent(
 ):
     """
     Returns a compiled LangGraph react agent for the given session.
-    Re-creates if the token changes (e.g. after login refresh).
+    Re-creates when bearer token OR macro inputs change so tool closures
+    always reflect the user's current macro settings.
     """
-    if session_id in _agents and _agent_tokens.get(session_id) == bearer_token:
+    key = _cache_key(bearer_token, macro_pkr, macro_oil, macro_conf)
+    if session_id in _agents and _agent_keys.get(session_id) == key:
         return _agents[session_id]
 
     llm = ChatGroq(
@@ -48,13 +59,15 @@ def get_or_create_agent(
 
     register_session(session_id)
     _agents[session_id] = agent
-    _agent_tokens[session_id] = bearer_token
+    _agent_keys[session_id] = key
     return agent
 
 
 def invoke_agent(session_id: str, user_message: str) -> tuple[str, list[str]]:
     """
     Invoke the agent for a session. Returns (response_text, tools_used_list).
+    On any error the corrupted agent is evicted from the cache so the next
+    request gets a fresh instance.
     """
     agent = _agents.get(session_id)
     if not agent:
@@ -63,27 +76,67 @@ def invoke_agent(session_id: str, user_message: str) -> tuple[str, list[str]]:
     from langchain_core.messages import HumanMessage
     config = {"configurable": {"thread_id": session_id}}
 
-    result = agent.invoke(
-        {"messages": [HumanMessage(content=user_message)]},
-        config=config
-    )
+    try:
+        result = agent.invoke(
+            {"messages": [HumanMessage(content=user_message)]},
+            config=config,
+        )
 
-    messages = result.get("messages", [])
-    response_text = ""
-    tools_used = []
+        messages = result.get("messages", [])
+        response_text = ""
+        tools_used = []
 
-    for msg in messages:
-        msg_type = type(msg).__name__
-        if msg_type == "AIMessage" and msg.content:
-            response_text = msg.content if isinstance(msg.content, str) else str(msg.content)
-        if msg_type == "ToolMessage":
-            if hasattr(msg, "name") and msg.name:
+        for msg in messages:
+            msg_type = type(msg).__name__
+            if msg_type == "AIMessage" and msg.content:
+                response_text = (
+                    msg.content if isinstance(msg.content, str) else str(msg.content)
+                )
+            if msg_type == "ToolMessage" and hasattr(msg, "name") and msg.name:
                 tools_used.append(msg.name)
 
-    return response_text or "I could not generate a response.", list(dict.fromkeys(tools_used))
+        return (
+            response_text or "I could not generate a response.",
+            list(dict.fromkeys(tools_used)),
+        )
+
+    except Exception as e:
+        err_str = str(e)
+        logger.error("Agent invoke error for session %s: %s", session_id, err_str)
+
+        # Evict the agent so the next request creates a fresh one
+        _agents.pop(session_id, None)
+        _agent_keys.pop(session_id, None)
+
+        if "tool call validation failed" in err_str or "tool_use_failed" in err_str:
+            return (
+                "The assistant hit a tool-call validation error and has been reset. "
+                "Please retry your question.",
+                [],
+            )
+
+        if "rate_limit" in err_str.lower() or "429" in err_str:
+            return (
+                "The AI service is currently rate-limited. "
+                "Please wait a moment and try again.",
+                [],
+            )
+
+        if "connection" in err_str.lower() or "timeout" in err_str.lower():
+            return (
+                "Could not reach the AI service. "
+                "Please check your connection and try again.",
+                [],
+            )
+
+        return (
+            "The assistant encountered an unexpected error. "
+            "Please try again or rephrase your question.",
+            [],
+        )
 
 
 def clear_session(session_id: str) -> None:
     _agents.pop(session_id, None)
-    _agent_tokens.pop(session_id, None)
+    _agent_keys.pop(session_id, None)
     clear_memory(session_id)

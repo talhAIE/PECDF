@@ -9,7 +9,7 @@ from database.connection import engine
 from database.models import Base
 from ml.loader import load_artifacts
 from ml import loader
-from routers import auth, forecast, scenario, analytics, agent
+from routers import auth, forecast, scenario, analytics, agent, macro
 
 
 @asynccontextmanager
@@ -67,11 +67,17 @@ app.include_router(forecast.router)
 app.include_router(scenario.router)
 app.include_router(analytics.router)
 app.include_router(agent.router)
+app.include_router(macro.router)
 
 
 # ── System endpoints ──────────────────────────────────────────────────────────
 @app.get("/health", tags=["System"])
 def health():
+    data_end = (
+        int(loader.master_df["Date_YYYYMM"].max())
+        if loader.master_df is not None and len(loader.master_df) > 0
+        else 0
+    )
     return {
         "status": "ok",
         "version": settings.app_version,
@@ -81,6 +87,7 @@ def health():
         "test_mape": loader.test_mape,
         "test_r2": loader.test_r2,
         "train_cutoff": loader.train_cutoff,
+        "data_end": data_end,       # last month with actual data (e.g. 202512)
         "commodities_count": len(loader.hs_categories),
     }
 

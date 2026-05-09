@@ -35,3 +35,4 @@ cryptography>=42.0.0
 # Utilities
 python-dotenv>=1.0.0
 httpx>=0.27.0
+duckduckgo-search>=6.0.0

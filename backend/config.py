@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     app_name: str = "PECDF Backend"
     app_version: str = "1.0.0"
     debug: bool = True
-    allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
 
     database_url: str = "sqlite:///./pecdf.db"
 
@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     agent_max_tokens: int = 4096
     agent_memory_window: int = 10
     session_ttl_hours: int = 24
+
+    # FRED API — free key at https://fred.stlouisfed.org/docs/api/api_key.html
+    # Used for real-time US Consumer Confidence (UMCSENT series)
+    fred_api_key: str = ""
 
     class Config:
         env_file = ".env"
