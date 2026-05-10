@@ -46,6 +46,8 @@
 
   #root {
     min-height: 100vh;
+    /* Avoid rare horizontal “creep” when nested flex/grid children overflow (mobile). */
+    min-width: 0;
   }
 
   * {
