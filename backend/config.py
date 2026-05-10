@@ -1,41 +1,52 @@
 import json
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal, Optional
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _BACKEND_DIR = Path(__file__).resolve().parent
+
+
+def _parse_allowed_origins_str(raw: Optional[str]) -> list[str]:
+    """
+    Normalize CORS origins. Must read env as plain str — pydantic-settings runs json.loads()
+    on list[T] env values before validators, which breaks blank or malformed strings on Render.
+    """
+    localhost = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
+    if raw is None:
+        return localhost
+    s = str(raw).strip()
+    if not s:
+        return localhost
+    if s.startswith("["):
+        try:
+            parsed = json.loads(s)
+        except json.JSONDecodeError as e:
+            raise ValueError("ALLOWED_ORIGINS is not valid JSON.") from e
+        if not isinstance(parsed, list):
+            raise ValueError('ALLOWED_ORIGINS JSON must look like ["https://a.com"].')
+        out = [str(x).strip() for x in parsed if str(x).strip()]
+        if not out:
+            raise ValueError("ALLOWED_ORIGINS JSON array is empty.")
+        return out
+    return [x.strip() for x in s.split(",") if x.strip()]
 
 
 class Settings(BaseSettings):
     app_name: str = "PECDF Backend"
     app_version: str = "1.0.0"
     debug: bool = True
-    allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
+    allowed_origins_env: Optional[str] = Field(
+        default=None,
+        validation_alias="ALLOWED_ORIGINS",
+        description='Comma-separated or JSON array, e.g. https://x.vercel.app,https://y.vercel.app',
+    )
 
-    @field_validator("allowed_origins", mode="before")
-    @classmethod
-    def parse_allowed_origins(cls, v: Any) -> list[str]:
-        """Render/UI often use JSON; allow comma-separated as well."""
-        if v is None:
-            return ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
-        if isinstance(v, list):
-            return [str(x).strip() for x in v if str(x).strip()]
-        if isinstance(v, str):
-            s = v.strip()
-            if not s:
-                return ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
-            if s.startswith("["):
-                try:
-                    parsed = json.loads(s)
-                except json.JSONDecodeError as e:
-                    raise ValueError("ALLOWED_ORIGINS is not valid JSON.") from e
-                if not isinstance(parsed, list):
-                    raise ValueError("ALLOWED_ORIGINS JSON must be a JSON array of strings.")
-                return [str(x).strip() for x in parsed if str(x).strip()]
-            return [x.strip() for x in s.split(",") if x.strip()]
-        raise ValueError("ALLOWED_ORIGINS must be a list, JSON array, or comma-separated string.")
+    @computed_field
+    @property
+    def allowed_origins(self) -> list[str]:
+        return _parse_allowed_origins_str(self.allowed_origins_env)
 
     # Neon: set DATABASE_URL in .env (pooled URI). SQLite only used if DATABASE_URL is unset / empty string.
     database_url: str = Field(
