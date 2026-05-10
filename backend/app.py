@@ -69,6 +69,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+print(f"[APP] CORS allow_origins ({len(settings.allowed_origins)}): {settings.allowed_origins}", flush=True)
 
 
 # ── Request timing middleware ─────────────────────────────────────────────────
