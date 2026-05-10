@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { sendChatMessage, getSessionHistory, clearSession } from '../api/agent'
+import { getErrorMessage } from '../utils/apiError'
 import { useMacroStore } from '../store/macroStore'
 
 const SESSION_KEY = 'pecdf_session_id'
@@ -30,13 +31,14 @@ export function useAgentChat() {
         },
       ])
     },
-    onError: () => {
+    onError: (err) => {
+      const msg = getErrorMessage(err, 'Sorry, something went wrong. Please try again.')
       setMessages(prev => [
         ...prev,
         {
           id:         `${Date.now()}-error`,
           role:       'assistant',
-          content:    'Sorry, something went wrong. Please try again.',
+          content:    msg,
           tools_used: [],
           isError:    true,
         },

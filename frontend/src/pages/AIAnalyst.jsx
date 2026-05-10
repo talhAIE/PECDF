@@ -15,7 +15,7 @@ function MacroDisplay() {
   const us_confidence = useMacroStore(s => s.us_confidence)
   return (
     <SurfaceCard className="space-y-3" gradientTop>
-      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Active macro inputs</p>
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Toolbar macro</p>
       <div className="space-y-2">
         {[
           { label: 'USD/PKR', value: usd_pkr.toFixed(1) },
@@ -28,7 +28,7 @@ function MacroDisplay() {
           </div>
         ))}
       </div>
-      <p className="text-[11px] text-slate-400">Edit values in the toolbar above.</p>
+      <p className="text-[11px] text-slate-500">Adjusted from the sticky bar.</p>
     </SurfaceCard>
   )
 }
@@ -36,7 +36,7 @@ function MacroDisplay() {
 function SessionInfo({ sessionId, messageCount, onClear }) {
   return (
     <SurfaceCard className="space-y-3">
-      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Session</p>
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Session</p>
       <div className="space-y-1.5 text-xs text-slate-600">
         <div className="flex justify-between">
           <span>Status</span>
@@ -73,29 +73,29 @@ function QuickLinks() {
   const navigate = useNavigate()
   return (
     <SurfaceCard className="space-y-1">
-      <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Quick links</p>
+      <p className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Go to</p>
       <button
         type="button"
         onClick={() => navigate('/forecast')}
-        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-indigo-50 hover:text-indigo-800"
+        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
       >
-        <BarChart2 size={14} className="text-indigo-600" />
+        <BarChart2 size={14} className="text-slate-700" />
         Forecast center
       </button>
       <button
         type="button"
         onClick={() => navigate('/scenario')}
-        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-violet-50 hover:text-violet-900"
+        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
       >
-        <RefreshCw size={14} className="text-violet-600" />
+        <RefreshCw size={14} className="text-slate-700" />
         Scenario simulator
       </button>
       <button
         type="button"
         onClick={() => navigate('/report')}
-        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-emerald-50 hover:text-emerald-900"
+        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
       >
-        <FileText size={14} className="text-emerald-600" />
+        <FileText size={14} className="text-slate-700" />
         Generate report
       </button>
     </SurfaceCard>
@@ -109,10 +109,10 @@ export default function AIAnalyst() {
     <div className="flex min-h-[calc(100vh-7rem)] flex-col gap-6 pb-8">
 
       <PageHeader
-        eyebrow="AI assistant"
-        title="Export analyst"
-        description="Ask in plain English about forecasts, commodities, and macro drivers. Replies use the same macro sliders as the rest of the app plus live forecasting tools."
-        hint="Prefer short questions first; you can drill down (“show 6-month cotton yarn”). Use Clear conversation if responses feel stuck."
+        eyebrow="Assistant"
+        title="Conversational analyst"
+        description="Ask open questions about exports, drivers, or any HS line item — answers pull the same live services as Forecast & Scenarios, so what you read here matches the rest of the desk."
+        hint="Prime with a tight question, then stack follow‑ups; clear the thread if the model latches onto the wrong assumption."
         icon={Bot}
       />
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { login } from '../api/auth'
 import { useAuthStore } from '../store/authStore'
 import AuthLayout from '../components/ui/AuthLayout'
+import { getErrorMessage } from '../utils/apiError'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -19,10 +20,14 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const data = await login(email, password)
-      setAuth(data.access_token, { email: data.email ?? email, user_id: data.user_id })
+      setAuth(data.access_token, {
+        email: data.email ?? email,
+        user_id: data.user_id,
+        full_name: data.full_name ?? null,
+      })
       navigate('/dashboard')
     } catch (err) {
-      setError(err.message)
+      setError(getErrorMessage(err, 'Could not sign in.'))
     } finally {
       setLoading(false)
     }
@@ -42,7 +47,7 @@ export default function LoginPage() {
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm transition-colors focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/15"
             placeholder="you@example.com"
           />
         </div>
@@ -54,13 +59,16 @@ export default function LoginPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm transition-colors focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/15"
             placeholder="••••••••"
           />
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5">
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5"
+          >
             <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
@@ -68,7 +76,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-700 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all hover:from-indigo-500 hover:to-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? 'Signing in…' : 'Sign in'}
         </button>
@@ -76,7 +84,7 @@ export default function LoginPage() {
 
       <p className="mt-6 text-center text-sm text-slate-500">
         Don&apos;t have an account?{' '}
-        <Link to="/register" className="font-semibold text-indigo-600 hover:text-indigo-700">
+        <Link to="/register" className="font-semibold text-slate-900 underline decoration-slate-300 underline-offset-2 hover:decoration-slate-900">
           Register
         </Link>
       </p>

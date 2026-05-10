@@ -1,18 +1,33 @@
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import { clsx } from 'clsx'
+import { getErrorMessage } from '../../utils/apiError'
 
 export default function ErrorState({
-  message = 'Something went wrong.',
+  /** Explicit copy (wins over `error`) */
+  message,
+  /** React Query error, ApiError, axios error, etc. */
+  error,
+  fallback = 'Something went wrong.',
   onRetry = null,
   className = ''
 }) {
+  const resolved =
+    (typeof message === 'string' && message.trim() ? message : null) ??
+    (error != null ? getErrorMessage(error, fallback) : null) ??
+    fallback
+
   return (
     <div className={clsx('flex flex-col items-center justify-center py-12 text-center', className)}>
       <div className="p-3 bg-red-50 rounded-full mb-3">
-        <AlertCircle size={22} className="text-red-500" />
+        <AlertCircle size={22} className="text-red-500" aria-hidden />
       </div>
       <p className="mb-1 text-sm font-semibold text-slate-800">Something went wrong</p>
-      <p className="mb-5 max-w-sm text-xs leading-relaxed text-slate-500">{message}</p>
+      <p
+        role="status"
+        className="mb-5 max-w-sm text-xs leading-relaxed text-slate-500"
+      >
+        {resolved}
+      </p>
       {onRetry && (
         <button
           type="button"
