@@ -135,8 +135,9 @@ export default function ForecastChart({
         </div>
       )}
 
-      <ResponsiveContainer width="100%" height={height}>
-        <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: compact ? 0 : 20 }}>
+      <div className="w-full min-w-0" style={{ height }}>
+        <ResponsiveContainer width="100%" height={height}>
+          <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: compact ? 0 : 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
 
           <XAxis
@@ -225,8 +226,9 @@ export default function ForecastChart({
               }
             />
           )}
-        </ComposedChart>
-      </ResponsiveContainer>
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
 
       {!compact && <CustomLegend />}
     </div>

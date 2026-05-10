@@ -155,7 +155,8 @@ export default function ForecastCenter() {
       <PageHeader
         eyebrow="Forecasts"
         title="Forecast center"
-        description="Multi-horizon export forecasts driven by the macro inputs in the toolbar. Tune commodity, horizon, and confidence bands."
+        description="Multi-horizon export forecasts driven by the macro inputs in the toolbar. Pick a commodity and horizon—the chart merges history with modeled months ahead."
+        hint="Uncertainty bands widen with horizon length. Toggle bands off for a simpler view when presenting."
         icon={LineChart}
       />
 

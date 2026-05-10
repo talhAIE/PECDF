@@ -222,13 +222,14 @@ export default function MacroBar() {
       </div>
 
       {/* Right side — sync live + reset + model badge */}
-      <div className="flex items-center gap-4 shrink-0">
+      <div className="flex flex-wrap items-center gap-3 shrink-0 sm:gap-4">
         {/* Sync Live button */}
         <button
+          type="button"
           onClick={handleSyncLive}
           disabled={syncing}
           title="Fetch real-time USD/PKR, Brent Oil, and US Confidence from live market data"
-          className={`flex items-center gap-1 text-xs font-medium transition-colors ${syncColor} disabled:opacity-60`}
+          className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-200/90 bg-white/90 px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-colors hover:bg-white disabled:opacity-60 ${syncColor}`}
         >
           <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
           {syncing ? 'Syncing…' : syncLabel}

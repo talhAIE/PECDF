@@ -212,7 +212,8 @@ export default function ReportGenerator() {
       <PageHeader
         eyebrow="Reports"
         title="Report generator"
-        description="AI-generated narrative from live forecast outputs, seasonality, and momentum — aligned with your macro bar and chosen scope."
+        description="AI-written export outlook built from live forecasts, seasonality, and momentum—aligned with your toolbar macro assumptions and chosen scope."
+        hint="Executive tone is concise for stakeholders; Technical includes MAPE-style context where relevant."
         icon={FileText}
       />
 

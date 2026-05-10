@@ -18,18 +18,22 @@ export default function ChatWindow({ messages, isPending, isRestorable, onSend, 
 
       {/* restore banner */}
       {isRestorable && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-amber-50 border-b border-amber-200 text-sm">
-          <span className="text-amber-800">You have a previous session. Resume it?</span>
-          <div className="flex gap-2">
+        <div className="flex flex-col gap-3 border-b border-amber-200/90 bg-gradient-to-r from-amber-50 to-amber-100/40 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <span className="font-medium leading-snug text-amber-950">
+            Continue your last analyst chat. Messages are saved in this browser.
+          </span>
+          <div className="flex shrink-0 gap-2">
             <button
+              type="button"
               onClick={onRestore}
-              className="px-3 py-1 rounded-lg bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 transition-colors"
+              className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
             >
               Resume
             </button>
             <button
+              type="button"
               onClick={onDismiss}
-              className="px-3 py-1 rounded-lg border border-amber-300 text-amber-700 text-xs font-medium hover:bg-amber-100 transition-colors"
+              className="rounded-lg border border-amber-300 bg-white px-4 py-1.5 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-50"
             >
               Start fresh
             </button>

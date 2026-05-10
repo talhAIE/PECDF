@@ -1,6 +1,7 @@
 venv/
 .env
 .env.*
+!.env.example
 
 # Local SQLite (dev DB)
 *.db

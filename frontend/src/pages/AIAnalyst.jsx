@@ -106,19 +106,20 @@ export default function AIAnalyst() {
   const { messages, isPending, isRestorable, sessionId, send, restore, clear, dismiss } = useAgentChat()
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col gap-6">
+    <div className="flex min-h-[calc(100vh-7rem)] flex-col gap-6 pb-8">
 
       <PageHeader
         eyebrow="AI assistant"
         title="Export analyst"
-        description="Ask questions about forecasts, commodities, and macro drivers. The assistant uses your session macro inputs and live API tools."
+        description="Ask in plain English about forecasts, commodities, and macro drivers. Replies use the same macro sliders as the rest of the app plus live forecasting tools."
+        hint="Prefer short questions first; you can drill down (“show 6-month cotton yarn”). Use Clear conversation if responses feel stuck."
         icon={Bot}
       />
 
-      <div className="flex min-h-0 flex-1 gap-5">
+      <div className="flex min-h-0 flex-1 flex-col gap-5 xl:flex-row xl:gap-6">
 
-        {/* chat — takes remaining width */}
-        <div className="min-h-0 min-w-0 flex-1">
+        {/* chat — full width on small screens */}
+        <div className="min-h-[min(28rem,calc(100vh-22rem))] min-w-0 flex-1 xl:min-h-[calc(100vh-18rem)]">
           <ChatWindow
             messages={messages}
             isPending={isPending}
@@ -129,8 +130,8 @@ export default function AIAnalyst() {
           />
         </div>
 
-        {/* sidebar */}
-        <div className="w-full shrink-0 space-y-3 overflow-y-auto sm:w-56">
+        {/* sidebar — stacks under chat on tablets */}
+        <div className="w-full shrink-0 space-y-3 overflow-y-auto xl:w-60">
           <MacroDisplay />
           <SessionInfo
             sessionId={sessionId}

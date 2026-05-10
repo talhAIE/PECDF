@@ -6,9 +6,17 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import settings
 
+_sqlite = settings.database_url.startswith("sqlite")
+_engine_kwargs = (
+    {"connect_args": {"check_same_thread": False}}
+    if _sqlite
+    else {}
+)
+
 engine = create_engine(
     settings.database_url,
-    connect_args={"check_same_thread": False}  # SQLite only
+    pool_pre_ping=True,
+    **_engine_kwargs,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

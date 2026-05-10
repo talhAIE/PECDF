@@ -15,6 +15,7 @@ import {
 import { useMomentum } from '../hooks/useMomentum'
 import { usePortfolioForecast } from '../hooks/usePortfolioForecast'
 import { useMacroStore } from '../store/macroStore'
+import { useAuthStore } from '../store/authStore'
 import CommodityCard from '../components/ui/CommodityCard'
 import MomentumBadge from '../components/ui/MomentumBadge'
 import PortfolioDonut from '../components/charts/PortfolioDonut'
@@ -35,6 +36,15 @@ function dirFromPct(pct) {
   if (pct > 0.05) return 'up'
   if (pct < -0.05) return 'down'
   return 'flat'
+}
+
+/** Short greeting from login payload (typically email-only). */
+function welcomeLabel(user) {
+  if (!user?.email) return null
+  const local = user.email.split('@')[0] || ''
+  const token = local.replace(/[._+-]+/g, ' ').trim().split(/\s+/)[0]
+  if (!token) return null
+  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase()
 }
 
 /** Page section with optional eyebrow + title + right slot */
@@ -222,6 +232,8 @@ function SignalPanel({ variant, title, subtitle, children, empty }) {
 
 export default function Dashboard() {
   const { usd_pkr, brent_oil, us_confidence } = useMacroStore()
+  const user = useAuthStore((s) => s.user)
+  const greeting = welcomeLabel(user)
 
   const {
     data: momentumData,
@@ -298,27 +310,35 @@ export default function Dashboard() {
     <div className="mx-auto max-w-6xl space-y-10 pb-16 lg:max-w-[1200px]">
       <PageHeader
         eyebrow="Overview"
-        title="Dashboard"
-        description="Next-month export values for ten HS categories under your macro assumptions. Values follow the toolbar at the top of the app."
+        title={greeting ? `Welcome back, ${greeting}` : 'Dashboard'}
+        description="Next-month export values for ten HS categories under your macro assumptions. Every number on this page uses the market inputs in the bar above."
+        hint="Tip: use Sync live in the toolbar to pull fresh USD/PKR, Brent, and US confidence, then watch the grid and portfolio total update."
         icon={LayoutGrid}
         right={portfolioTotalRight}
       />
 
       <nav
-        className="flex flex-wrap gap-2 rounded-xl border border-slate-200/90 bg-white/90 p-2 shadow-sm backdrop-blur-sm sm:gap-2.5"
+        className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ring-1 ring-slate-100/80"
         aria-label="Quick navigation"
       >
-        {quickLinks.map(({ to, label, icon: NavIcon }) => (
-          <Link
-            key={to}
-            to={to}
-            className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium text-slate-700 ring-1 ring-transparent transition-colors hover:bg-slate-50 hover:text-slate-900 hover:ring-slate-200/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-          >
-            <NavIcon size={16} className="text-slate-500" strokeWidth={2} aria-hidden />
-            {label}
-            <ArrowRight size={14} className="text-slate-400" aria-hidden />
-          </Link>
-        ))}
+        <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Jump to</p>
+        <div className="flex flex-wrap gap-2">
+          {quickLinks.map(({ to, label, icon: NavIcon }) => (
+            <Link
+              key={to}
+              to={to}
+              className="group inline-flex flex-1 min-w-[8.5rem] items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3.5 py-2.5 text-sm font-medium text-slate-800 transition-colors hover:border-indigo-200 hover:bg-white hover:text-indigo-900 hover:shadow-sm sm:flex-initial sm:min-w-0"
+            >
+              <span className="inline-flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200/80 group-hover:ring-indigo-200">
+                  <NavIcon size={16} strokeWidth={2} aria-hidden />
+                </span>
+                {label}
+              </span>
+              <ArrowRight size={15} className="text-slate-300 transition-colors group-hover:translate-x-0.5 group-hover:text-indigo-500" aria-hidden />
+            </Link>
+          ))}
+        </div>
       </nav>
 
       {/* Macro */}
