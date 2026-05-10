@@ -7,7 +7,7 @@ export default function AppShell() {
     <div className="min-h-screen">
       <Navbar />
       <MacroBar />
-      <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-10 lg:py-11">
+      <main className="mx-auto max-w-[1440px] px-4 py-9 sm:px-6 lg:px-10 lg:py-12">
         <Outlet />
       </main>
     </div>

@@ -107,15 +107,17 @@ export default function ForecastCenter() {
   const {
     data: histResp,
     isLoading: histLoading,
-    isError:   histError,
-    refetch:   histRefetch,
+    isError: histError,
+    error: histErrorDetail,
+    refetch: histRefetch,
   } = useHistorical(hs, 24)
 
   const {
     data: fcResp,
     isLoading: fcLoading,
-    isError:   fcError,
-    refetch:   fcRefetch,
+    isError: fcError,
+    error: fcErrorDetail,
+    refetch: fcRefetch,
   } = useMultiHorizonForecast(hs, horizon)
 
   // ── Derived values ──────────────────────────────────────────────────────────
@@ -155,8 +157,8 @@ export default function ForecastCenter() {
       <PageHeader
         eyebrow="Forecasts"
         title="Forecast center"
-        description="Multi-horizon export forecasts driven by the macro inputs in the toolbar. Pick a commodity and horizon—the chart merges history with modeled months ahead."
-        hint="Uncertainty bands widen with horizon length. Toggle bands off for a simpler view when presenting."
+        description="Wire a commodity plus how many months ahead to show. Actuals fade into the modeled path using the FX, Brent, and confidence sliders from the toolbar — no duplicated inputs."
+        hint="Confidence bands widen the further you forecast; flip them off in one click when you need a minimalist slide."
         icon={LineChart}
       />
 
@@ -258,8 +260,12 @@ export default function ForecastCenter() {
           {/* Chart */}
           {isError ? (
             <ErrorState
-              message="Failed to load forecast data."
-              onRetry={() => { histRefetch(); fcRefetch() }}
+              error={fcErrorDetail ?? histErrorDetail}
+              fallback="Failed to load forecast data."
+              onRetry={() => {
+                histRefetch()
+                fcRefetch()
+              }}
             />
           ) : isLoading ? (
             <SurfaceCard>

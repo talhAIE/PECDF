@@ -4,6 +4,7 @@ import { RotateCcw, RefreshCw, ChevronUp, ChevronDown } from 'lucide-react'
 import { useMacroStore } from '../../store/macroStore'
 import { useModelInfo, fmtMonthYear } from '../../hooks/useModelInfo'
 import { fetchLiveMacro } from '../../api/system'
+import { getErrorMessage } from '../../utils/apiError'
 
 // Keep min/max aligned with backend `MacroInputs` (schemas/common.py) so forecasts don’t 422.
 const FIELDS = [
@@ -172,9 +173,9 @@ export default function MacroBar() {
           duration: 5500,
         })
       }
-    } catch {
+    } catch (err) {
       setSyncStatus('error')
-      toast.error('Could not reach /macro/live — is the backend running?')
+      toast.error(getErrorMessage(err, 'Could not sync live macro data — check API and keys.'))
     } finally {
       setSyncing(false)
       setTimeout(() => setSyncStatus(null), 4000)
@@ -190,12 +191,12 @@ export default function MacroBar() {
     : 'Sync Live'
 
   const syncColor = syncStatus === 'ok'
-    ? 'text-green-600'
+    ? 'text-emerald-700'
     : syncStatus === 'error'
-    ? 'text-red-500'
+    ? 'text-red-600'
     : syncStatus === 'partial'
-    ? 'text-amber-500'
-    : 'text-blue-500 hover:text-blue-700'
+    ? 'text-amber-700'
+    : 'text-slate-700 hover:text-slate-900'
 
   return (
     <div className="sticky top-14 z-40 flex h-auto min-h-[3.25rem] flex-wrap items-center gap-4 border-b border-slate-200/80 bg-white/70 px-4 py-2.5 shadow-sm shadow-slate-900/5 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 sm:gap-6 sm:px-6">

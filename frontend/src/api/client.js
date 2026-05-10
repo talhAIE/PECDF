@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { ApiError, messageFromAxios } from '../utils/apiError'
 
 /**
  * In dev, avoid same-origin `/api/*` → Vite (proxy often yields POST 404 / resume failures).
@@ -70,13 +71,24 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
+    const url = typeof error.config?.url === 'string' ? error.config.url : ''
+    /** Wrong password / register conflicts must not wipe session & hard-redirect */
+    const isAuthGuest =
+      url.includes('/auth/login') || url.includes('/auth/register')
+
+    if (error.response?.status === 401 && !isAuthGuest) {
       localStorage.removeItem('pecdf_token')
       localStorage.removeItem('pecdf_user')
-      window.location.href = '/login'
+      const path = window.location.pathname || ''
+      if (!path.startsWith('/login')) {
+        window.location.href = '/login'
+      }
     }
-    const message = error.response?.data?.detail || error.message || 'Request failed'
-    return Promise.reject(new Error(message))
+
+    const msg = messageFromAxios(error)
+    const status = error.response?.status ?? null
+    const code = error.code ?? null
+    return Promise.reject(new ApiError(msg, { status, code }))
   }
 )
 

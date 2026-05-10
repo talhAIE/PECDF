@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import time
@@ -79,13 +80,27 @@ async def add_process_time(request: Request, call_next):
     return response
 
 
-# ── Global exception handler ──────────────────────────────────────────────────
+# ── API errors ────────────────────────────────────────────────────────────────
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    parts: list[str] = []
+    for err in exc.errors():
+        loc = err.get("loc") or ()
+        loc_bits = ".".join(str(x) for x in loc if x not in ("body", "query", "path"))
+        msg = err.get("msg", "Invalid value")
+        parts.append(f"{loc_bits}: {msg}" if loc_bits else msg)
+    detail = "; ".join(parts) if parts else "Invalid request"
+    return JSONResponse(status_code=422, content={"detail": detail})
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    return JSONResponse(
-        status_code=500,
-        content={"detail": f"Internal server error: {str(exc)}"},
-    )
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    traceback.print_exc()
+    detail = str(exc) if settings.debug else "Internal server error. Please try again later."
+    return JSONResponse(status_code=500, content={"detail": detail})
 
 
 # ── Routers ───────────────────────────────────────────────────────────────────

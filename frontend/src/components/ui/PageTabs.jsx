@@ -1,6 +1,6 @@
 import { clsx } from 'clsx'
 
-/** Underline tabs — indigo active state aligned with app chrome */
+/** Underline tabs — slate accent */
 export default function PageTabs({ tabs, active, onChange, className = '' }) {
   return (
     <div
@@ -17,8 +17,8 @@ export default function PageTabs({ tabs, active, onChange, className = '' }) {
           className={clsx(
             '-mb-px whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors sm:px-5',
             active === t.id
-              ? 'border-indigo-600 font-semibold text-indigo-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-slate-900 font-semibold text-slate-950'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
           )}
         >
           {t.label}

@@ -14,6 +14,7 @@ import PageHeader from '../components/ui/PageHeader'
 import SurfaceCard from '../components/ui/SurfaceCard'
 import PageTabs from '../components/ui/PageTabs'
 import { Sliders } from 'lucide-react'
+import { getErrorMessage } from '../utils/apiError'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -159,7 +160,7 @@ function SingleVariableTab() {
         fixed_conf:    fixedConf,
         n_months:      horizon,
       },
-      { onError: (err) => toast.error(err.message ?? 'Scenario failed') }
+      { onError: (err) => toast.error(getErrorMessage(err, 'Scenario failed')) }
     )
   }
 
@@ -300,7 +301,7 @@ function MultiVariableTab() {
         fixed_conf:    fixedConf,
         n_months:      horizon,
       },
-      { onError: (err) => toast.error(err.message ?? 'Scenario failed') }
+      { onError: (err) => toast.error(getErrorMessage(err, 'Scenario failed')) }
     )
   }
 
@@ -469,7 +470,7 @@ function CompareTab() {
   }
 
   function handleRun() {
-    const onErr = (err) => toast.error(err.message ?? 'Scenario failed')
+    const onErr = (err) => toast.error(getErrorMessage(err, 'Scenario failed'))
     mutA.mutate(buildParams(aPkr, aOil, aConf), { onError: onErr })
     mutB.mutate(buildParams(bPkr, bOil, bConf), { onError: onErr })
   }
@@ -618,10 +619,10 @@ export default function ScenarioSimulator() {
   return (
     <div className="pb-8">
       <PageHeader
-        eyebrow="What-if analysis"
-        title="Scenario simulator"
-        description="Stress-test PKR, oil, and US confidence—single-variable sweeps, PKR × oil grids, or side-by-side comparison—without changing your saved toolbar defaults until you sync."
-        hint="Start with Single variable to see slope impact, then Multi-variable for a PKR × oil heat map."
+        eyebrow="Scenarios"
+        title="Stress-test lab"
+        description="Sweep one macro driver, map how PKR and Brent interact on a grid, or line up two hypotheses — all isolated from what you pinned in the market bar unless you consciously sync forward."
+        hint="Flow: isolate a slope on Single variable · graduate to Multi for the heat-map · Compare when you’re adjudicating plans side by side."
         icon={Sliders}
       />
 

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FileText, Download, RefreshCw, ChevronDown } from 'lucide-react'
 import MarkdownMessage from '../components/chat/MarkdownMessage'
 import { useGenerateReport } from '../hooks/useGenerateReport'
+import { getErrorMessage } from '../utils/apiError'
 import { useMacroStore }       from '../store/macroStore'
 import { COMMODITY_META } from '../config/commodities'
 import { downloadReportAsPDF } from '../utils/pdfExport'
@@ -193,7 +194,8 @@ export default function ReportGenerator() {
     tone:     'executive',
   })
 
-  const { mutate, data, isPending, isError, reset } = useGenerateReport()
+  const { mutate, data, isPending, isError, error: reportError, reset } =
+    useGenerateReport()
 
   const handleConfigChange = (next) => {
     if (next._trigger) {
@@ -211,9 +213,9 @@ export default function ReportGenerator() {
 
       <PageHeader
         eyebrow="Reports"
-        title="Report generator"
-        description="AI-written export outlook built from live forecasts, seasonality, and momentum—aligned with your toolbar macro assumptions and chosen scope."
-        hint="Executive tone is concise for stakeholders; Technical includes MAPE-style context where relevant."
+        title="Briefing drafts"
+        description="Generate prose briefings that weave together live forecasts, seasonality fingerprints, and momentum — always framed by whatever macro stance you pinned above."
+        hint="Executive mode stays tight for leadership read‑outs; Technical mode brings forward model error commentary when it materially changes the takeaway."
         icon={FileText}
       />
 
@@ -249,9 +251,20 @@ export default function ReportGenerator() {
           )}
 
           {isError && !isPending && (
-            <SurfaceCard className="flex min-h-[20rem] flex-col items-center justify-center gap-2 border-rose-200 bg-rose-50/90">
-              <p className="text-sm font-medium text-rose-800">Report generation failed</p>
-              <p className="text-xs text-rose-600">Check that the backend is running and try again.</p>
+            <SurfaceCard className="flex min-h-[20rem] flex-col items-center justify-center gap-3 border-rose-200 bg-rose-50/90 px-6 py-10 text-center">
+              <p className="text-sm font-semibold text-rose-900">Report generation failed</p>
+              <p className="max-w-md text-xs leading-relaxed text-rose-700" role="status">
+                {getErrorMessage(reportError, 'Check that the API is running and keys are configured, then try again.')}
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  mutate({ ...config, macro: { usd_pkr, brent_oil, us_confidence } })
+                }
+                className="rounded-lg bg-rose-800 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-rose-700"
+              >
+                Retry
+              </button>
             </SurfaceCard>
           )}
 

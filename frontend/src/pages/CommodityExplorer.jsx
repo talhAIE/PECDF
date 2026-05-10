@@ -29,6 +29,7 @@ import PageHeader        from '../components/ui/PageHeader'
 import SurfaceCard       from '../components/ui/SurfaceCard'
 import PageTabs          from '../components/ui/PageTabs'
 import { Layers }        from 'lucide-react'
+import { getErrorMessage } from '../utils/apiError'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -87,7 +88,13 @@ function SectionCard({ title, subtitle, children, className = '' }) {
 // ── Tab 1: Overview ───────────────────────────────────────────────────────────
 
 function OverviewTab({ hs, meta }) {
-  const { data: histResp, isLoading, isError, refetch } = useHistorical(hs, 186)
+  const {
+    data: histResp,
+    isLoading,
+    isError,
+    error: overviewHistError,
+    refetch,
+  } = useHistorical(hs, 186)
   const { data: commodityMapes } = useCommodityMapes()
   const mape = commodityMapes?.[hs] ?? meta.mape
   const historical = histResp?.data ?? []
@@ -118,7 +125,15 @@ function OverviewTab({ hs, meta }) {
   }, [historical])
 
   if (isLoading) return <div className="space-y-4"><SkeletonCard /><SkeletonCard /></div>
-  if (isError)   return <ErrorState onRetry={refetch} />
+  if (isError) {
+    return (
+      <ErrorState
+        error={overviewHistError}
+        fallback="Could not load historical series."
+        onRetry={refetch}
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -177,8 +192,14 @@ function ForecastTab({ hs }) {
     return new Date(y, m - 1).toLocaleString('en-US', { month: 'short', year: 'numeric' })
   }
 
-  const { data: histResp,  isLoading: histL  } = useHistorical(hs, 24)
-  const { data: fcResp,    isLoading: fcL,  isError: fcErr, refetch: fcRefetch } = useMultiHorizonForecast(hs, horizon)
+  const { data: histResp, isLoading: histL } = useHistorical(hs, 24)
+  const {
+    data: fcResp,
+    isLoading: fcL,
+    isError: fcErr,
+    error: fcFetchError,
+    refetch: fcRefetch,
+  } = useMultiHorizonForecast(hs, horizon)
 
   const historical = histResp?.data ?? []
   const forecast   = fcResp?.forecast ?? []
@@ -199,7 +220,7 @@ function ForecastTab({ hs }) {
       </div>
 
       {fcErr ? (
-        <ErrorState message="Could not load forecast." onRetry={fcRefetch} />
+        <ErrorState error={fcFetchError} fallback="Could not load forecast." onRetry={fcRefetch} />
       ) : (histL || fcL) ? (
         <SurfaceCard>
           <div className="h-96 animate-pulse rounded-xl bg-gradient-to-br from-slate-100 to-indigo-50/30" />
@@ -238,7 +259,13 @@ function ForecastTab({ hs }) {
 function SeasonalityTab({ hs }) {
   const [showYears, setShowYears] = useState(false)
 
-  const { data: seasResp, isLoading, isError, refetch } = useSeasonality(hs)
+  const {
+    data: seasResp,
+    isLoading,
+    isError,
+    error: seasonalityError,
+    refetch,
+  } = useSeasonality(hs)
   const { data: histResp } = useHistorical(hs, 36)
 
   const yearData = useMemo(() => {
@@ -257,7 +284,11 @@ function SeasonalityTab({ hs }) {
   }, [histResp])
 
   if (isLoading) return <SkeletonCard className="h-64" />
-  if (isError)   return <ErrorState onRetry={refetch} />
+  if (isError) {
+    return (
+      <ErrorState error={seasonalityError} fallback="Could not load seasonality." onRetry={refetch} />
+    )
+  }
 
   const monthlyAverages = seasResp?.monthly_averages ?? {}
   const peakMonth   = seasResp?.peak_month
@@ -404,7 +435,9 @@ function SensitivityTab({ hs }) {
               {q.isLoading ? (
                 <SkeletonLoader lines={4} />
               ) : q.isError ? (
-                <p className="text-xs text-red-500">Failed to load</p>
+                <p className="text-xs text-red-600" role="status">
+                  {getErrorMessage(q.error, 'Could not load sensitivity sweep.')}
+                </p>
               ) : q.data ? (
                 <ScenarioChart
                   points={q.data.points}
@@ -446,7 +479,13 @@ function ModelPerformanceTab({ hs, meta }) {
   const mape      = commodityMapes?.[hs] ?? meta.mape
 
   /* One-step predictions per calendar month using macros from the CSV (same as API model). */
-  const { data: fitResp, isLoading: fitL, isError: fitErr, refetch: fitRefetch } = useQuery({
+  const {
+    data: fitResp,
+    isLoading: fitL,
+    isError: fitErr,
+    error: fitQueryError,
+    refetch: fitRefetch,
+  } = useQuery({
     queryKey: ['model-fit', hs, testStart, dataEnd],
     queryFn:  () => fetchModelFitSeries(hs, testStart, dataEnd),
     staleTime: 5 * 60 * 1000,
@@ -496,7 +535,7 @@ function ModelPerformanceTab({ hs, meta }) {
         subtitle="Red line: champion XGB model via make_prediction for each month using PKR/oil/confidence from that month's training row (same inference path as production)."
       >
         {fitErr ? (
-          <ErrorState message={String(fitErr?.message ?? 'Could not load model-fit series')} onRetry={fitRefetch} />
+          <ErrorState error={fitQueryError} fallback="Could not load model-fit series." onRetry={fitRefetch} />
         ) : isLoading ? (
           <div className="h-72 animate-pulse bg-slate-100 rounded-lg" />
         ) : (
@@ -573,10 +612,14 @@ export default function CommodityExplorer() {
   return (
     <div className="pb-8">
       <PageHeader
-        eyebrow="Commodity deep-dive"
+        eyebrow="Deep dive"
         title={meta.name ?? `HS ${hs}`}
-        description={meta.sector ? `${meta.sector} · full analytics for this HS code` : `Analytics and forecasts for HS ${hs}`}
-        hint="Use the tabs below to move between history, forecast, seasonality, macro sensitivity, and model fit—without losing your place."
+        description={
+          meta.sector
+            ? `${meta.sector} · full analytic stack anchored on HS ${hs}`
+            : `Run the full playbook on HS ${hs} — trajectory, horizons, sensitivities, seasonality, model fit`
+        }
+        hint="Tabs remember where you were; jump between storyline, forecasting, sensitivities, and audit views without reloading context."
         icon={Layers}
         right={
           <div className="w-full min-w-[200px] sm:w-56">

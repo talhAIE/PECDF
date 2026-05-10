@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { clsx } from 'clsx'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -22,6 +23,7 @@ import PortfolioDonut from '../components/charts/PortfolioDonut'
 import { SkeletonCard } from '../components/ui/SkeletonLoader'
 import ErrorState from '../components/ui/ErrorState'
 import PageHeader from '../components/ui/PageHeader'
+import { welcomeFirstName } from '../utils/displayName'
 
 function buildSparkData(item, forecastM) {
   const { last_actual_m, momentum_3m_pct = 0, momentum_6m_pct = 0 } = item
@@ -47,25 +49,25 @@ function welcomeLabel(user) {
   return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase()
 }
 
-/** Page section with optional eyebrow + title + right slot */
+/** Page section — muted rail keeps long pages scannable without loud cards everywhere */
 function PageBlock({ eyebrow, title, description, right, children, className = '' }) {
   return (
-    <section className={className}>
+    <section className={clsx('border-l border-slate-200/90 pl-5 sm:pl-6', className)}>
       {(eyebrow || title || description || right) && (
-        <div className="mb-6 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 space-y-1.5">
+        <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-1">
             {eyebrow && (
-              <p className="font-display text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 {eyebrow}
               </p>
             )}
             {title && (
-              <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
+              <h2 className="font-display text-xl font-semibold tracking-[-0.02em] text-slate-950 sm:text-[1.35rem]">
                 {title}
               </h2>
             )}
             {description && (
-              <p className="max-w-2xl text-sm leading-relaxed text-slate-600">{description}</p>
+              <p className="max-w-2xl pt-1 text-[0.9375rem] leading-snug text-slate-600">{description}</p>
             )}
           </div>
           {right && <div className="shrink-0 sm:pt-0.5">{right}</div>}
@@ -114,21 +116,21 @@ function MacroContextGrid({ usd_pkr, brent_oil, us_confidence }) {
       icon: DollarSign,
       label: 'USD / PKR',
       value: usd_pkr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      sub: 'Spot rate applied to all forecasts below.',
+      sub: 'Applied across all modeled values.',
       accent: 'indigo',
     },
     {
       icon: Flame,
       label: 'Brent crude',
       value: `$${brent_oil.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      sub: 'Per barrel · aligns with the toolbar above.',
+      sub: 'Per barrel — same as toolbar.',
       accent: 'amber',
     },
     {
       icon: Gauge,
       label: 'US confidence',
       value: us_confidence.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
-      sub: 'Conference Board index · macro demand proxy.',
+      sub: 'Conference Board composite.',
       accent: 'violet',
     },
   ]
@@ -233,12 +235,13 @@ function SignalPanel({ variant, title, subtitle, children, empty }) {
 export default function Dashboard() {
   const { usd_pkr, brent_oil, us_confidence } = useMacroStore()
   const user = useAuthStore((s) => s.user)
-  const greeting = welcomeLabel(user)
+  const greeting = welcomeFirstName(user)
 
   const {
     data: momentumData,
     isLoading: momLoading,
     isError: momError,
+    error: momErrorDetail,
     refetch: momRefetch,
   } = useMomentum()
 
@@ -285,18 +288,23 @@ export default function Dashboard() {
 
   const portfolioTotalRight =
     pfLoading ? (
-      <div className="w-[10.5rem] shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
-        <div className="ml-auto h-3 w-20 animate-pulse rounded bg-slate-200/90" />
-        <div className="ml-auto mt-2 h-8 w-28 animate-pulse rounded-md bg-slate-200/80" />
+      <div className="min-h-[7.75rem] rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-5">
+        <div className="h-3 w-24 animate-pulse rounded bg-slate-200/80" />
+        <div className="mt-6 h-9 w-[8.5rem] animate-pulse rounded-md bg-slate-200/80" />
       </div>
     ) : portfolioData && !pfError ? (
-      <div className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-right shadow-sm">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Portfolio (next month)
+      <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-white to-slate-50 px-6 py-5 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.15)] ring-1 ring-slate-100/90">
+        <p className="font-display text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+          Modeled portfolio
         </p>
-        <p className="tabular-fig font-mono text-2xl font-semibold tracking-tight text-slate-900 sm:text-[1.65rem]">
-          ${portfolioData.total_m.toFixed(1)}M
+        <p className="mt-4 text-sm font-medium text-slate-600">Next‑month horizon</p>
+        <p className="tabular-fig mt-0.5 font-mono text-[2.125rem] font-semibold leading-none tracking-tight text-slate-950 sm:text-[2.375rem]">
+          ${portfolioData.total_m.toFixed(1)}
+          <span className="ml-1 text-xl font-semibold tracking-tight text-slate-500">M USD</span>
         </p>
+        <div className="mt-5 border-t border-slate-100 pt-3">
+          <p className="text-[11px] leading-snug text-slate-500">Roll‑up across the ten‑sector basket at your current PKR · oil · confidence settings.</p>
+        </div>
       </div>
     ) : null
 
@@ -309,33 +317,39 @@ export default function Dashboard() {
   return (
     <div className="mx-auto max-w-6xl space-y-10 pb-16 lg:max-w-[1200px]">
       <PageHeader
-        eyebrow="Overview"
-        title={greeting ? `Welcome back, ${greeting}` : 'Dashboard'}
-        description="Next-month export values for ten HS categories under your macro assumptions. Every number on this page uses the market inputs in the bar above."
-        hint="Tip: use Sync live in the toolbar to pull fresh USD/PKR, Brent, and US confidence, then watch the grid and portfolio total update."
+        eyebrow="Home"
+        title={greeting ? `${greeting}, welcome back.` : 'Your workspace'}
+        description="Overview of modeled export demand: next‑month outlook, momentum sparks, and how the basket allocates — tied to whatever you set in the market bar."
+        hint="Spot quote getting stale? Use Sync live in the toolbar once; every chart downstream picks up refreshed FX, Brent, and confidence."
         icon={LayoutGrid}
         right={portfolioTotalRight}
       />
 
       <nav
-        className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ring-1 ring-slate-100/80"
+        className="rounded-2xl border border-slate-200/75 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_36px_-20px_rgba(15,23,42,0.1)]"
         aria-label="Quick navigation"
       >
-        <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Jump to</p>
+        <p className="mb-3 px-0.5 text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+          Shortcuts
+        </p>
         <div className="flex flex-wrap gap-2">
           {quickLinks.map(({ to, label, icon: NavIcon }) => (
             <Link
               key={to}
               to={to}
-              className="group inline-flex flex-1 min-w-[8.5rem] items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3.5 py-2.5 text-sm font-medium text-slate-800 transition-colors hover:border-indigo-200 hover:bg-white hover:text-indigo-900 hover:shadow-sm sm:flex-initial sm:min-w-0"
+              className="group inline-flex flex-1 min-w-[8.5rem] items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-[0.8125rem] font-medium text-slate-800 transition-colors hover:border-slate-900/15 hover:bg-slate-50 sm:flex-initial sm:min-w-0"
             >
               <span className="inline-flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200/80 group-hover:ring-indigo-200">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
                   <NavIcon size={16} strokeWidth={2} aria-hidden />
                 </span>
                 {label}
               </span>
-              <ArrowRight size={15} className="text-slate-300 transition-colors group-hover:translate-x-0.5 group-hover:text-indigo-500" aria-hidden />
+              <ArrowRight
+                size={15}
+                className="text-slate-400 transition-colors group-hover:translate-x-0.5 group-hover:text-slate-900"
+                aria-hidden
+              />
             </Link>
           ))}
         </div>
@@ -343,10 +357,9 @@ export default function Dashboard() {
 
       {/* Macro */}
       <PageBlock
-        eyebrow="Macro inputs"
-        title="Assumptions in use"
-        description="These three drivers match the control bar at the top of the app. Every figure on this page is
-        consistent with them."
+        eyebrow="Drivers"
+        title="Macro assumptions"
+        description="Echo of the sticky market bar below — edits there flow through every modeled number on this page."
       >
         <MacroContextGrid usd_pkr={usd_pkr} brent_oil={brent_oil} us_confidence={us_confidence} />
       </PageBlock>
@@ -354,19 +367,21 @@ export default function Dashboard() {
       {/* Portfolio */}
       <PageBlock
         eyebrow="Forecasts"
-        title="Commodity outlook"
-        description="Last reported month vs model forecast for the next month (millions USD). Share of portfolio on the right reflects the next-month mix."
+        title="Basket & allocation"
+        description="Cards carry the modeled next‑month print plus a short trajectory strip; the chart on the right is share of aggregate basket value."
       >
         {momError && (
-          <ErrorState message="Could not load momentum data from the server." onRetry={momRefetch} />
+          <ErrorState
+            error={momErrorDetail}
+            fallback="Could not load momentum data from the server."
+            onRetry={momRefetch}
+          />
         )}
 
         {!momError && pfError && (
           <ErrorState
-            message={
-              String(pfErrorDetail?.message ?? 'Could not load portfolio forecast.')
-              + ' If you changed market inputs, check USD/PKR, Brent, and US Confidence are within valid API ranges.'
-            }
+            error={pfErrorDetail}
+            fallback="Could not load portfolio forecast. Check macro inputs are within toolbar limits."
             onRetry={pfRefetch}
             className="mb-6"
           />
@@ -376,18 +391,18 @@ export default function Dashboard() {
           <div className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div className="flex items-center gap-3 text-slate-800">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
                   <LayoutGrid size={17} strokeWidth={2.1} />
                 </span>
                 <div>
-                  <span className="font-display text-sm font-semibold">All commodities</span>
-                  <p className="text-xs text-slate-500">10 HS categories · millions USD · next month</p>
+                  <span className="font-display text-sm font-semibold text-slate-950">Tracked basket</span>
+                  <p className="text-xs text-slate-500">Ten HS codes · USD millions · horizon T+1</p>
                 </div>
               </div>
               {!momLoading && pfFetching && (
-                <span className="inline-flex items-center gap-2 self-start rounded-full bg-white px-3 py-1 text-xs font-medium text-indigo-800 ring-1 ring-indigo-100 sm:self-auto">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
-                  Refreshing forecasts…
+                <span className="inline-flex items-center gap-2 self-start rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 sm:self-auto">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-900" />
+                  Updating forecasts…
                 </span>
               )}
             </div>
@@ -411,10 +426,8 @@ export default function Dashboard() {
 
               <aside className="border-t border-slate-100 bg-slate-50/50 xl:w-[min(100%,320px)] xl:border-l xl:border-t-0">
                 <div className="p-5 sm:p-6 lg:p-7">
-                  <h3 className="font-display text-sm font-semibold text-slate-900">Share of portfolio</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                    Next-month mix · hover segments for detail
-                  </p>
+                  <h3 className="font-display text-sm font-semibold text-slate-950">Portfolio mix</h3>
+                  <p className="mt-1 text-xs leading-snug text-slate-600">Next‑month share — hover wedges for breakdown.</p>
                   <div className="mt-6">
                     {pfLoading ? (
                       <div className="space-y-4">
@@ -426,7 +439,12 @@ export default function Dashboard() {
                         </div>
                       </div>
                     ) : pfError ? (
-                      <ErrorState message="Could not load forecast." onRetry={pfRefetch} className="py-8" />
+                      <ErrorState
+                        error={pfErrorDetail}
+                        fallback="Could not load forecast."
+                        onRetry={pfRefetch}
+                        className="py-8"
+                      />
                     ) : (
                       <PortfolioDonut
                         data={portfolioData?.commodities ?? []}
@@ -444,8 +462,8 @@ export default function Dashboard() {
       {/* Signals */}
       <PageBlock
         eyebrow="Momentum"
-        title="Signals — 3-month trend"
-        description='Historical export momentum (not the macro sliders). "Opportunities" are positive 3-month change; "Watch list" shows the largest declines.'
+        title="Quarterly trajectory"
+        description="Rolling 3‑month move in reported exports vs your scenario controls. Separate from toolbar stress tests."
       >
         {momLoading ? (
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:gap-8">
@@ -456,11 +474,11 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:gap-8">
             <SignalPanel
               variant="emerald"
-              title="Opportunities"
-              subtitle="Strongest positive 3-month momentum — demand building vs prior quarter."
+              title="Leaders"
+              subtitle="Strongest positive 3M export momentum vs prior pace."
               empty={
                 opportunities.length === 0
-                  ? 'No commodities are showing positive 3-month momentum. Review the watch list or open individual commodities for context.'
+                  ? 'No positive 3M momentum in the basket right now — scan the companion list or open a commodity for detail.'
                   : null
               }
             >
@@ -472,11 +490,11 @@ export default function Dashboard() {
 
             <SignalPanel
               variant="rose"
-              title="Watch list"
-              subtitle="Largest negative 3-month moves — monitor volatility and drivers."
+              title="Soft spots"
+              subtitle="Sharpest negative 3M moves — worth a second pass on drivers."
               empty={
                 watchlist.length === 0
-                  ? 'No negative 3-month momentum across the basket — recent trends look stable.'
+                  ? 'Nothing weakening on a 3M view — drift is fairly balanced.'
                   : null
               }
             >

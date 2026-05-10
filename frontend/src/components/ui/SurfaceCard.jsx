@@ -10,16 +10,13 @@ export default function SurfaceCard({
   return (
     <div
       className={clsx(
-        'relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white',
-        'shadow-[0_8px_32px_-16px_rgba(15,23,42,0.12)] ring-1 ring-slate-100/80',
+        'relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white',
+        'shadow-[0_1px_2px_rgba(15,23,42,0.04),0_14px_40px_-18px_rgba(15,23,42,0.08)]',
         className
       )}
     >
       {gradientTop && (
-        <div
-          className="h-1 w-full bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400"
-          aria-hidden
-        />
+        <div className="h-0.5 w-full shrink-0 bg-slate-900" aria-hidden />
       )}
       {padding ? (
         <div
