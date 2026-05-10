@@ -620,7 +620,8 @@ export default function ScenarioSimulator() {
       <PageHeader
         eyebrow="What-if analysis"
         title="Scenario simulator"
-        description="Stress-test PKR, oil, and US confidence—single-variable sweeps, PKR × oil grids, or side-by-side scenario comparison."
+        description="Stress-test PKR, oil, and US confidence—single-variable sweeps, PKR × oil grids, or side-by-side comparison—without changing your saved toolbar defaults until you sync."
+        hint="Start with Single variable to see slope impact, then Multi-variable for a PKR × oil heat map."
         icon={Sliders}
       />
 

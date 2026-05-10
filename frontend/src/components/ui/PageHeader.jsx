@@ -1,12 +1,15 @@
+import { Sparkles } from 'lucide-react'
 import { clsx } from 'clsx'
 
 /**
  * Consistent page hero for app routes (matches dashboard brand: indigo/violet, Plus Jakarta on title).
+ * @param {string} [hint] Friendly one-line tip (shown in an info strip below the description).
  */
 export default function PageHeader({
   eyebrow,
   title,
   description,
+  hint,
   icon: Icon,
   right,
   className = '',
@@ -39,6 +42,15 @@ export default function PageHeader({
             <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{title}</h1>
             {description && (
               <p className="max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-[15px]">{description}</p>
+            )}
+            {hint && (
+              <div
+                className="flex max-w-3xl gap-2.5 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/90 to-cyan-50/40 px-3.5 py-2.5 text-[13px] leading-snug text-slate-700 shadow-sm shadow-indigo-900/[0.03] sm:px-4 sm:py-3"
+                role="note"
+              >
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" aria-hidden />
+                <span>{hint}</span>
+              </div>
             )}
             {children}
           </div>

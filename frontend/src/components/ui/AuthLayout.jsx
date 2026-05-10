@@ -30,6 +30,13 @@ export default function AuthLayout({ children, subtitle = 'Pakistan Export Deman
         <div className="relative rounded-3xl border border-slate-200/80 bg-white/90 p-8 pt-10 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.2)] ring-1 ring-slate-100 backdrop-blur-sm supports-[backdrop-filter]:bg-white/85">
           <div className="absolute inset-x-0 top-0 h-1 rounded-t-3xl bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400" />
           {children}
+          {import.meta.env.PROD && (
+            <p className="mt-6 border-t border-slate-100 pt-4 text-center text-[11px] leading-relaxed text-slate-400">
+              Hosted on free tier? Your API can take{' '}
+              <span className="font-medium text-slate-600">about 30–90 seconds</span> to wake after idle — keep this tab
+              open until sign-in finishes.
+            </p>
+          )}
         </div>
       </div>
     </div>

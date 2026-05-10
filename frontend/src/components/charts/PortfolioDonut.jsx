@@ -22,8 +22,8 @@ export default function PortfolioDonut({ data = [], totalM = 0, className = '' }
     <div className={className}>
       <div className="flex items-center gap-4">
         {/* Donut */}
-        <div className="shrink-0" style={{ width: 160, height: 160 }}>
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-[160px] w-[160px] shrink-0 overflow-hidden">
+          <ResponsiveContainer width={160} height={160}>
             <PieChart>
               <Pie
                 data={data}

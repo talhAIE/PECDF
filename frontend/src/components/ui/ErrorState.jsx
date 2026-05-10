@@ -11,15 +11,16 @@ export default function ErrorState({
       <div className="p-3 bg-red-50 rounded-full mb-3">
         <AlertCircle size={22} className="text-red-500" />
       </div>
-      <p className="text-sm font-medium text-slate-700 mb-1">Failed to load data</p>
-      <p className="text-xs text-slate-400 max-w-xs mb-4">{message}</p>
+      <p className="mb-1 text-sm font-semibold text-slate-800">Something went wrong</p>
+      <p className="mb-5 max-w-sm text-xs leading-relaxed text-slate-500">{message}</p>
       {onRetry && (
         <button
+          type="button"
           onClick={onRetry}
-          className="flex items-center gap-2 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-indigo-500"
         >
-          <RefreshCw size={13} />
-          Retry
+          <RefreshCw size={14} className="opacity-90" aria-hidden />
+          Try again
         </button>
       )}
     </div>

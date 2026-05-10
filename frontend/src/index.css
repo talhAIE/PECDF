@@ -11,6 +11,10 @@
     --pecdf-bg-deep: #e2e8f0;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     font-family: 'Inter', system-ui, sans-serif;
     background-color: var(--pecdf-bg-base);
@@ -21,6 +25,12 @@
     margin: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Clear keyboard focus for links & controls */
+  :where(a, button, input, select, textarea):focus-visible {
+    outline: 2px solid rgba(79, 70, 229, 0.55);
+    outline-offset: 2px;
   }
 
   .font-display {

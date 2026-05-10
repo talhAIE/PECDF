@@ -576,6 +576,7 @@ export default function CommodityExplorer() {
         eyebrow="Commodity deep-dive"
         title={meta.name ?? `HS ${hs}`}
         description={meta.sector ? `${meta.sector} · full analytics for this HS code` : `Analytics and forecasts for HS ${hs}`}
+        hint="Use the tabs below to move between history, forecast, seasonality, macro sensitivity, and model fit—without losing your place."
         icon={Layers}
         right={
           <div className="w-full min-w-[200px] sm:w-56">

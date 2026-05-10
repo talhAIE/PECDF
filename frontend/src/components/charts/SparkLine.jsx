@@ -20,8 +20,8 @@ export default function SparkLine({
   }
 
   return (
-    <div className="h-11 w-full" aria-hidden>
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-11 w-full min-w-0" aria-hidden>
+      <ResponsiveContainer width="100%" height={44}>
         <LineChart data={chartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
           <Line
             type="monotone"

@@ -32,7 +32,7 @@ export default function CommodityCard({
   return (
     <div
       className={clsx(
-        'group relative flex min-h-[172px] cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-white p-3',
+        'group relative flex min-h-[172px] min-w-0 cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-white p-3',
         'shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] transition-all duration-300',
         'before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:scale-x-0 before:bg-gradient-to-r before:from-indigo-500 before:to-violet-500 before:transition-transform before:duration-300 group-hover:before:scale-x-100',
         'hover:-translate-y-1 hover:border-indigo-200/90 hover:shadow-[0_16px_40px_-20px_rgba(79,70,229,0.25)] sm:p-4',
