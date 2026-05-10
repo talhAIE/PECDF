@@ -1,5 +1,6 @@
+import json
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -12,6 +13,29 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     debug: bool = True
     allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v: Any) -> list[str]:
+        """Render/UI often use JSON; allow comma-separated as well."""
+        if v is None:
+            return ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
+        if isinstance(v, list):
+            return [str(x).strip() for x in v if str(x).strip()]
+        if isinstance(v, str):
+            s = v.strip()
+            if not s:
+                return ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
+            if s.startswith("["):
+                try:
+                    parsed = json.loads(s)
+                except json.JSONDecodeError as e:
+                    raise ValueError("ALLOWED_ORIGINS is not valid JSON.") from e
+                if not isinstance(parsed, list):
+                    raise ValueError("ALLOWED_ORIGINS JSON must be a JSON array of strings.")
+                return [str(x).strip() for x in parsed if str(x).strip()]
+            return [x.strip() for x in s.split(",") if x.strip()]
+        raise ValueError("ALLOWED_ORIGINS must be a list, JSON array, or comma-separated string.")
 
     # Neon: set DATABASE_URL in .env (pooled URI). SQLite only used if DATABASE_URL is unset / empty string.
     database_url: str = Field(

@@ -1,0 +1,16 @@
+# Render Blueprint — new services only (do not duplicate an existing Web Service).
+# Existing deploy: Dashboard → Settings → Root Directory = "backend",
+# Start Command = uvicorn app:app --host 0.0.0.0 --port $PORT
+# Or keep Root empty and use: cd backend && uvicorn app:app --host 0.0.0.0 --port $PORT
+
+services:
+  - type: web
+    name: pecdf-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"

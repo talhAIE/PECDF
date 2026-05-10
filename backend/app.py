@@ -1,3 +1,4 @@
+import traceback
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,8 +19,22 @@ from routers import auth, forecast, scenario, analytics, agent, macro
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # ── Startup ──────────────────────────
-    Base.metadata.create_all(bind=engine)   # create DB tables if not exist
-    load_artifacts()                         # load model + master_df into memory
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception:
+        print("[APP] Database init failed (check DATABASE_URL, SSL/sslmode)", flush=True)
+        traceback.print_exc()
+        raise
+
+    try:
+        load_artifacts()
+    except Exception:
+        print(
+            "[APP] ML artifact load failed (check MODEL_PATH/MASTER_DATA_PATH and repo layout on Render)",
+            flush=True,
+        )
+        traceback.print_exc()
+        raise
     try:
         from llm_runtime import resolve_agent_llm_provider
 
